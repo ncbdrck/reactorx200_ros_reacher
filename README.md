@@ -19,11 +19,11 @@ This ROS repo requires **ROS_RL** to be installed. Please follow the instruction
 
 To simulate the task, you need to install the **MultiROS** package. Please follow the instructions in the [MultiROS repository](https://github.com/ncbdrck/multiros) to install MultiROS.
 
-### 3. Rx200 Robot repository
+### 3. Rx200 Robot Repository
 
 You can download the official repository of the Rx200 robot from [here](https://github.com/Interbotix/interbotix_ros_manipulators) and follow the instructions to install it.
 
-Furthermore, you can also follow the instructions in the [Rx200 official Documentation](https://docs.trossenrobotics.com/interbotix_xsarms_docs/ros_interface/ros1/software_setup.html) to install the related ros packages.
+Furthermore, you can also follow the instructions in the [Rx200 Official Documentation](https://docs.trossenrobotics.com/interbotix_xsarms_docs/ros_interface/ros1/software_setup.html) to install the related ros packages.
 
 At the moment, these are the installation instructions for the Rx200 robot with ROS Noetic on Ubuntu 20.04:
 
@@ -33,7 +33,7 @@ curl 'https://raw.githubusercontent.com/Interbotix/interbotix_ros_manipulators/m
 chmod +x xsarm_amd64_install.sh
 ./xsarm_amd64_install.sh -d noetic
 ```
-**Note**: Unfortunately, this will install ROS Noetic if not already installed and create a new catkin workspace in your home directory. So source your workspace accordingly.
+**Note**: Unfortunately, this will install ROS Noetic if not already installed and create a new ROS workspace in your home directory. So source your workspace accordingly.
 
 ### 4. Rx200 Robot description package
 
@@ -76,6 +76,21 @@ Follow these steps to install the example reach task
    catkin build
    source devel/setup.bash
     ```
+## Issues
+
+If you installed the Rx200 robot description package from the official documentation, you might encounter an error when running the example reach task.
+This is because the official documentation creates a new ROS workspace in your home directory and adds it to the bashrc file.
+So each time you open a new terminal, the RX200 ROS workspace in your home directory is sourced instead of your catkin_ws directory.
+So either you can remove the line in the bashrc file that sources the Rx200 ROS workspace in your home directory or you can source the catkin_ws directory before running the example reach task.
+
+To source the catkin_ws directory, run the following commands in a new terminal:
+```shell
+cd ~/catkin_ws/
+source devel/setup.bash
+rospack profile
+```
+If you encounter any issues while installing or running the example reach task, please open an issue in this repository.
+
 
 ## Contact
 
