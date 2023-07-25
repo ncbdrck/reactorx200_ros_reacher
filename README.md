@@ -13,11 +13,11 @@ Before installing this package, make sure you have the following prerequisites:
 
 ### 1. ROS_RL
 
-This ROS repo requires ROS_RL to be installed. Please follow the instructions in the [ROS_RL repository](https://github.com/ncbdrck/ros_rl) to install ROS_RL.
+This ROS repo requires **ROS_RL** to be installed. Please follow the instructions in the [ROS_RL repository](https://github.com/ncbdrck/ros_rl) to install ROS_RL.
 
 ### 2. MultiROS
 
-To simulate the task, you need to install the [MultiROS](https://github.com/ncbdrck/multiros) package. Please follow the instructions in the package to install it.
+To simulate the task, you need to install the **MultiROS** package. Please follow the instructions in the [MultiROS repository](https://github.com/ncbdrck/multiros) to install MultiROS.
 
 ### 3. Rx200 Robot repository
 
@@ -33,7 +33,7 @@ curl 'https://raw.githubusercontent.com/Interbotix/interbotix_ros_manipulators/m
 chmod +x xsarm_amd64_install.sh
 ./xsarm_amd64_install.sh -d noetic
 ```
-**Note**: Unfortunately, this will create a new catkin workspace in your home directory.
+**Note**: Unfortunately, this will install ROS Noetic if not already installed and create a new catkin workspace in your home directory. So source your workspace accordingly.
 
 ### 4. Rx200 Robot description package
 
