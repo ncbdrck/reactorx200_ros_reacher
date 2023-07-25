@@ -8,7 +8,7 @@ from gym.envs.registration import register
 import scipy.spatial
 
 # Custom robot env
-from reactorx200_multiros_reacher.robot_envs import reactorx200_robot_env
+from reactorx200_ros_reacher.sim.robot_envs import reactorx200_robot_sim
 
 # core modules of the framework
 from multiros.utils import gazebo_core
@@ -19,15 +19,16 @@ from multiros.utils import ros_common
 from multiros.utils import ros_controllers
 from multiros.utils import ros_markers
 
+
 # Register your environment using the OpenAI register method to utilize gym.make("TaskEnv-v0").
-register(
-    id='RX200ReacherEnv-v0',
-    entry_point='reactorx200_multiros_reacher.task_envs.reactorx200_reacher:RX200ReacherEnv',
-    max_episode_steps=100,
-)
+# register(
+#     id='RX200ReacherEnvSim-v0',
+#     entry_point='reactorx200_ros_reacher.sim.task_envs.reactorx200_reacher_sim:RX200ReacherEnv',
+#     max_episode_steps=100,
+# )
 
 
-class RX200ReacherEnv(reactorx200_robot_env.RX200RobotEnv):
+class RX200ReacherEnv(reactorx200_robot_sim.RX200RobotEnv):
     """
     This Task env is for a simple Reach Task with the RX200 robot.
 
@@ -36,7 +37,7 @@ class RX200ReacherEnv(reactorx200_robot_env.RX200RobotEnv):
 
     Here
         * Action Space - Continuous (5 actions or 3 actions) - Joint positions or x,y,z position of the EE
-        * Observation  - Continuous (21 obs)
+        * Observation  - Continuous (12 obs)
 
     Init Args:
         * launch_gazebo: Whether to launch Gazebo or not. If False, it is assumed that Gazebo is already running.
@@ -49,14 +50,11 @@ class RX200ReacherEnv(reactorx200_robot_env.RX200RobotEnv):
         * ee_action_type: Whether to use the end-effector action space or the joint action space.
         * delta_action: Whether to use the delta actions or the absolute actions.
         * delta_coeff: Coefficient to be used for the delta actions.
-        * action_repeat: Whether to use action repeat or not.
-        * action_repeat_steps: Number of steps to repeat the action for.
     """
 
     def __init__(self, launch_gazebo: bool = True, new_roscore: bool = True, roscore_port: str = None,
                  gazebo_paused: bool = False, gazebo_gui: bool = False, seed: int = None, reward_type: str = "Dense",
-                 ee_action_type: bool = False, delta_action: bool = False, delta_coeff: float = 0.05,
-                 action_repeat: bool = False, action_repeat_steps: int = 5):
+                 ee_action_type: bool = False, delta_action: bool = False, delta_coeff: float = 0.05):
 
         """
         variables to keep track of ros, gazebo ports and gazebo pid
@@ -69,7 +67,7 @@ class RX200ReacherEnv(reactorx200_robot_env.RX200RobotEnv):
         Initialise the env
 
         It is recommended to launch Gazebo with a new roscore at this point for the following reasons:, 
-            1.  This allows running a new rosmaster to enable vectorization of the environment and the execution of 
+            1.  This allows running a new rosmaster to enable vectorisation of the environment and the execution of 
                 multiple environments concurrently.
             2.  The environment can keep track of the process ID of Gazebo to automatically close it when env.close() 
                 is called.
@@ -120,7 +118,7 @@ class RX200ReacherEnv(reactorx200_robot_env.RX200RobotEnv):
         """
         Reward Architecture
             * Dense - Default
-            * Sparse - -1 if not done and 0 if done
+            * Sparse - -1 if not done and 1 if done
             * All the others and misspellings - default to "Dense" reward
         """
         if reward_type.lower() == "sparse":
@@ -147,17 +145,11 @@ class RX200ReacherEnv(reactorx200_robot_env.RX200RobotEnv):
         self.delta_coeff = delta_coeff
 
         """
-        Action repeat
-        """
-        self.action_repeat = action_repeat
-        self.action_repeat_steps = action_repeat_steps
-
-        """
         Load YAML param file
         """
 
         # add to ros parameter server
-        ros_common.ros_load_yaml(pkg_name="reactorx200_multiros_reacher", file_name="reach_task_config.yaml", ns="/")
+        ros_common.ros_load_yaml(pkg_name="reactorx200_ros_reacher", file_name="reach_task_config.yaml", ns="/")
         self._get_params()
 
         """
@@ -178,6 +170,7 @@ class RX200ReacherEnv(reactorx200_robot_env.RX200RobotEnv):
         else:
             # Joint action space
             # ROS and Gazebo often use double-precision (64-bit)
+            # but we are using single-precision (32-bit) for our action space because we are using stable baselines3
             self.action_space = spaces.Box(low=np.array(self.min_joint_values), high=np.array(self.max_joint_values),
                                            dtype=np.float32)
 
@@ -186,14 +179,11 @@ class RX200ReacherEnv(reactorx200_robot_env.RX200RobotEnv):
 
         # observation
         01. EE pos - 3
-        02. EE rpy - 3 
-        03. linear distance to the goal in x, y,z direction - 3 
-        04. Vector to the goal (normalized linear distance) - 3
-        05. Euclidian distance (ee to reach goal)- 1 
-        06. Current Joint values - 5
-        07. Goal pos -3
+        02. Vector to the goal (normalized linear distance) - 3
+        03. Euclidian distance (ee to reach goal)- 1 
+        04. Current Joint values - 5
 
-        total: (3x5) + 1 + 5 = 21
+        total: (3x2) + 1 + 5 = 12
         """
 
         # ---- ee pos
@@ -201,18 +191,6 @@ class RX200ReacherEnv(reactorx200_robot_env.RX200RobotEnv):
             np.array([self.position_ee_max["x"], self.position_ee_max["y"], self.position_ee_max["z"]]))
         observations_low_ee_pos_range = np.array(
             np.array([self.position_ee_min["x"], self.position_ee_min["y"], self.position_ee_min["z"]]))
-
-        # ---- ee rpy
-        observations_high_ee_rpy_range = np.array(
-            np.array([self.rpy_ee_max["r"], self.rpy_ee_max["p"], self.rpy_ee_max["y"]]))
-        observations_low_ee_rpy_range = np.array(
-            np.array([self.rpy_ee_min["r"], self.rpy_ee_min["p"], self.rpy_ee_min["y"]]))
-
-        # ----- linear_distance
-        observations_high_linear_distance_range = np.array(
-            np.array([self.linear_distance_max["x"], self.linear_distance_max["y"], self.linear_distance_max["z"]]))
-        observations_low_linear_distance_range = np.array(
-            np.array([self.linear_distance_min["x"], self.linear_distance_min["y"], self.linear_distance_min["z"]]))
 
         # ---- vector to the goal - normalized linear distance
         observations_high_vec_ee_goal = np.array([1.0, 1.0, 1.0])
@@ -222,25 +200,25 @@ class RX200ReacherEnv(reactorx200_robot_env.RX200RobotEnv):
         observations_high_dist = np.array([self.max_distance])
         observations_low_dist = np.array([0.0])
 
-        # ---- Goal pos
-        high_goal_pos_range = np.array(
-            np.array([self.position_goal_max["x"], self.position_goal_max["y"], self.position_goal_max["z"]]))
-        low_goal_pos_range = np.array(
-            np.array([self.position_goal_min["x"], self.position_goal_min["y"], self.position_goal_min["z"]]))
-
         high = np.concatenate(
-            [observations_high_ee_pos_range, observations_high_ee_rpy_range, observations_high_linear_distance_range,
-             observations_high_vec_ee_goal, observations_high_dist, self.max_joint_values, high_goal_pos_range, ])
+            [observations_high_ee_pos_range, observations_high_vec_ee_goal, observations_high_dist,
+             self.max_joint_values, ])
 
         low = np.concatenate(
-            [observations_low_ee_pos_range, observations_low_ee_rpy_range, observations_low_linear_distance_range,
-             observations_low_vec_ee_goal, observations_low_dist, self.min_joint_values, low_goal_pos_range, ])
+            [observations_low_ee_pos_range, observations_low_vec_ee_goal, observations_low_dist,
+             self.min_joint_values, ])
 
         self.observation_space = spaces.Box(low=low, high=high, dtype=np.float32)
 
         """
         Goal space for sampling
         """
+        # ---- Goal pos
+        high_goal_pos_range = np.array(
+            np.array([self.position_goal_max["x"], self.position_goal_max["y"], self.position_goal_max["z"]]))
+        low_goal_pos_range = np.array(
+            np.array([self.position_goal_min["x"], self.position_goal_min["y"], self.position_goal_min["z"]]))
+
         # -- goal space for sampling
         self.goal_space = spaces.Box(low=low_goal_pos_range, high=high_goal_pos_range, dtype=np.float32)
 
@@ -294,14 +272,12 @@ class RX200ReacherEnv(reactorx200_robot_env.RX200RobotEnv):
             self.reach_goal = np.array([0.250, 0.000, 0.015], dtype=np.float32)
             rospy.logwarn("Hard Coded Reach Goal--->" + str(self.reach_goal))
 
-        # print("reach_goal shape:", self.reach_goal.shape)
-        # print("reach_goal type:", type(self.reach_goal))
-
         # Publish the goal pos
         self.goal_marker.set_position(position=self.reach_goal)
         self.goal_marker.publish()
 
         # get initial ee pos and joint values (we need this for delta actions)
+        # we don't need this because we reset env just before we start the episode (but just incase)
         self.ee_pos = self.get_ee_pose()
         self.joint_values = self.get_joint_angles()
 
@@ -323,90 +299,30 @@ class RX200ReacherEnv(reactorx200_robot_env.RX200RobotEnv):
         # --- EE action
         if self.ee_action_type:
 
-            # --- Action repeat
-            if self.action_repeat:
+            # --- Make actions as deltas
+            if self.delta_action:
+                action = self.ee_pos + (action * self.delta_coeff)
 
-                # --- Set the total result to True
-                total_result = True
+            # clip the action
+            action = np.clip(action, self.min_ee_values, self.max_ee_values)
 
-                # --- Repeat the action for action_repeat_steps
-                for i in range(self.action_repeat_steps):
-
-                    # --- Make actions as deltas
-                    if self.delta_action:
-                        action = self.ee_pos + (action * self.delta_coeff)
-
-                    # --- Make actions as absolute
-                    else:
-                        action = self.ee_pos + action
-
-                    # clip the action
-                    action = np.clip(action, self.min_ee_values, self.max_ee_values)
-
-                    # execute the trajectory
-                    move_success = self.set_trajectory_ee(action)
-
-                    total_result = total_result and move_success
-
-                self.movement_result = total_result
-
-            # --- No action repeat
-            else:
-                # --- Make actions as deltas
-                if self.delta_action:
-                    action = self.ee_pos + (action * self.delta_coeff)
-
-                # clip the action
-                action = np.clip(action, self.min_ee_values, self.max_ee_values)
-
-                # execute the trajectory
-                self.movement_result = self.set_trajectory_ee(action)
+            # execute the trajectory
+            self.movement_result = self.set_trajectory_ee(action)
 
         # --- Joint action
         else:
 
-            # --- Action repeat
-            if self.action_repeat:
+            # --- Make actions as deltas
+            if self.delta_action:
+                action = self.joint_values + (action * self.delta_coeff)
 
-                # --- Set the total result to True
-                total_result = True
+            # clip the action
+            # rospy.logwarn(f"Action + current joint_values before clip --->: {action}")
+            action = np.clip(action, self.min_joint_values, self.max_joint_values)
+            # rospy.logwarn(f"Action after --->: {action}")
 
-                # --- Repeat the action for action_repeat_steps
-                for i in range(self.action_repeat_steps):
-
-                    # --- Make actions as deltas
-                    if self.delta_action:
-                        action = self.joint_values + (action * self.delta_coeff)
-
-                    # --- Make actions as absolute
-                    else:
-                        action = self.joint_values + action
-
-                    # clip the action
-                    action = np.clip(action, self.min_joint_values, self.max_joint_values)
-
-                    # execute the trajectory
-                    move_success = self.set_trajectory_joints(action)
-
-                    # --- Update the total result
-                    total_result = total_result and move_success
-
-                # --- Set the movement result
-                self.movement_result = total_result
-
-            # --- No action repeat
-            else:
-                # --- Make actions as deltas
-                if self.delta_action:
-                    action = self.joint_values + (action * self.delta_coeff)
-
-                # clip the action
-                # rospy.logwarn(f"Action + current joint_values before clip --->: {action}")
-                action = np.clip(action, self.min_joint_values, self.max_joint_values)
-                # rospy.logwarn(f"Action after --->: {action}")
-
-                # execute the trajectory
-                self.movement_result = self.set_trajectory_joints(action)
+            # execute the trajectory
+            self.movement_result = self.set_trajectory_joints(action)
 
         if not self.movement_result:
             rospy.logwarn(f"Set action failed for --->: {action}")
@@ -419,14 +335,11 @@ class RX200ReacherEnv(reactorx200_robot_env.RX200RobotEnv):
 
         # observation
         01. EE pos - 3
-        02. EE rpy - 3
-        03. linear distance to the goal in x, y,z direction - 3
-        04. Vector to the goal (normalized linear distance) - 3
-        05. Euclidian distance (ee to reach goal)- 1
-        06. Current Joint values - 5
-        07. Goal pos -3
+        02. Vector to the goal (normalized linear distance) - 3
+        03. Euclidian distance (ee to reach goal)- 1
+        04. Current Joint values - 5
 
-        total: (3x5) + 1 + 5 = 21
+        total: (3x2) + 1 + 5 = 12
 
         Returns:
             An observation representing the current state of the environment.
@@ -437,26 +350,21 @@ class RX200ReacherEnv(reactorx200_robot_env.RX200RobotEnv):
         ee_pos_tmp = self.get_ee_pose()  # Get a geometry_msgs/PoseStamped msg
         self.ee_pos = np.array([ee_pos_tmp.pose.position.x, ee_pos_tmp.pose.position.y, ee_pos_tmp.pose.position.z])
 
-        # --- 2. Get EE rpy
-        ee_rpy_tmp = self.get_ee_rpy()  # Get a list
-        ee_rpy = np.array(ee_rpy_tmp)
-
-        # --- 3. Linear distance to the goal
+        # --- Linear distance to the goal
         linear_dist_ee_goal = current_goal - self.ee_pos  # goal is box dtype and ee_pos is numpy.array. It is okay
 
-        # --- 4. Vector to goal (we are giving only the direction vector)
+        # --- 2. Vector to goal (we are giving only the direction vector)
         vec_ee_goal = linear_dist_ee_goal / np.linalg.norm(linear_dist_ee_goal)
 
-        # --- 5. Euclidian distance
+        # --- 3. Euclidian distance
         euclidean_distance_ee_goal = scipy.spatial.distance.euclidean(self.ee_pos, current_goal)  # float
 
-        # --- 6. Get Current Joint values
+        # --- 4. Get Current Joint values
         self.joint_values = self.get_joint_angles()  # Get a list
         # we don't need to convert this to numpy array since we concat using numpy below
 
         # our observations
-        obs = np.concatenate((self.ee_pos, ee_rpy, linear_dist_ee_goal, vec_ee_goal, euclidean_distance_ee_goal,
-                              self.joint_values, current_goal), axis=None)
+        obs = np.concatenate((self.ee_pos, vec_ee_goal, euclidean_distance_ee_goal, self.joint_values), axis=None)
 
         rospy.loginfo(f"Observations --->: {obs}")
 
@@ -466,7 +374,7 @@ class RX200ReacherEnv(reactorx200_robot_env.RX200RobotEnv):
         """
         Function to get a reward from the environment.
 
-        Sparse Reward: float => 0.0 for success, -1.0 for failure
+        Sparse Reward: float => 1.0 for success, -1.0 for failure
 
         Dense Reward:
             if reached: self.reached_goal_reward (positive reward)
@@ -497,7 +405,7 @@ class RX200ReacherEnv(reactorx200_robot_env.RX200RobotEnv):
             reach_done = self.check_if_reach_done(achieved_goal, desired_goal)
 
             if reach_done:
-                reward = 0
+                reward = 1
 
                 # done (green) goal_marker
                 self.goal_marker.set_color(r=0.0, g=1.0)
@@ -548,6 +456,7 @@ class RX200ReacherEnv(reactorx200_robot_env.RX200RobotEnv):
             if not self.movement_result:
                 reward += self.none_exe_reward
 
+            # log the reward
             rospy.logwarn(">>>REWARD>>>" + str(reward))
 
         return reward
