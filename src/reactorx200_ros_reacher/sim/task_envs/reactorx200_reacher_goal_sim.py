@@ -105,16 +105,16 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim.RX200RobotGoalEnv):
 
         # init the ros node
         if ros_port is not None:
-            self.node_name = "RX200ReacherGoalEnv" + "_" + ros_port
+            self.node_name = "RX200ReacherGoalEnvSim" + "_" + ros_port
         else:
-            self.node_name = "RX200ReacherGoalEnv"
+            self.node_name = "RX200ReacherGoalEnvSim"
 
         rospy.init_node(self.node_name, anonymous=True)
 
         """
         Provide a description of the task.
         """
-        rospy.loginfo("Starting RX200ReacherGoalEnv")
+        rospy.loginfo(f"Starting {self.node_name}")
 
         """
         Reward Architecture
@@ -273,7 +273,7 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim.RX200RobotGoalEnv):
         """
         Finished __init__ method
         """
-        rospy.loginfo("Finished Init of RX200ReacherGoalEnv")
+        rospy.loginfo(f"Finished Init of {self.node_name}")
 
     # -------------------------------------------------------
     #   Methods for interacting with the environment

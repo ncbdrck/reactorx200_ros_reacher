@@ -66,10 +66,10 @@ class RX200ReacherEnv(reactorx200_robot_sim.RX200RobotEnv):
         """
         Initialise the env
 
-        It is recommended to launch Gazebo with a new roscore at this point for the following reasons:, 
-            1.  This allows running a new rosmaster to enable vectorisation of the environment and the execution of 
+        It is recommended to launch Gazebo with a new roscore at this point for the following reasons:,
+            1.  This allows running a new rosmaster to enable vectorisation of the environment and the execution of
                 multiple environments concurrently.
-            2.  The environment can keep track of the process ID of Gazebo to automatically close it when env.close() 
+            2.  The environment can keep track of the process ID of Gazebo to automatically close it when env.close()
                 is called.
 
         """
@@ -104,16 +104,16 @@ class RX200ReacherEnv(reactorx200_robot_sim.RX200RobotEnv):
 
         # init the ros node
         if ros_port is not None:
-            self.node_name = "RX200ReacherEnv" + "_" + ros_port
+            self.node_name = "RX200ReacherEnvSim" + "_" + ros_port
         else:
-            self.node_name = "RX200ReacherEnv"
+            self.node_name = "RX200ReacherEnvSim"
 
         rospy.init_node(self.node_name, anonymous=True)
 
         """
         Provide a description of the task.
         """
-        rospy.loginfo("Starting RX200ReacherEnv")
+        rospy.loginfo(f"Starting {self.node_name}")
 
         """
         Reward Architecture
@@ -180,7 +180,7 @@ class RX200ReacherEnv(reactorx200_robot_sim.RX200RobotEnv):
         # observation
         01. EE pos - 3
         02. Vector to the goal (normalized linear distance) - 3
-        03. Euclidian distance (ee to reach goal)- 1 
+        03. Euclidian distance (ee to reach goal)- 1
         04. Current Joint values - 5
 
         total: (3x2) + 1 + 5 = 12
@@ -236,7 +236,7 @@ class RX200ReacherEnv(reactorx200_robot_sim.RX200RobotEnv):
         """
         Finished __init__ method
         """
-        rospy.loginfo("Finished Init of RX200ReacherEnv")
+        rospy.loginfo(f"Finished Init of {self.node_name}")
 
     # -------------------------------------------------------
     #   Methods for interacting with the environment
