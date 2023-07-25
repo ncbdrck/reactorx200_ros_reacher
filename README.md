@@ -2,7 +2,7 @@
 
 This repository contains experiments conducted to showcase the capabilities of the [ROS_RL](https://github.com/ncbdrck/ros_rl) framework. 
 
-Here we show how to train a simple reach task using the [Rx200](https://www.trossenrobotics.com/reactorx-200-robot-arm.aspx robot.
+Here we show how to train a simple reach task using the [Rx200](https://www.trossenrobotics.com/reactorx-200-robot-arm.aspx) robot.
  
 This repo demonstrate the following features:
  1. Training the task directly in the real world (No need of a simulation environment).
