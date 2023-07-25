@@ -77,6 +77,7 @@ Follow these steps to install this package:
    rosdep install --from-paths src --ignore-src -r -y
    catkin build
    source devel/setup.bash
+   rospack profile
     ```
 ## Issues
 
