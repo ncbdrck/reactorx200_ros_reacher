@@ -1,11 +1,13 @@
-# Example Reach Task for ROS_RL
+# Simple Reach Task for ROS_RL
 
-This repository contains an example reach task for the [ROS_RL](https://github.com/ncbdrck/ros_rl) framework. 
+This repository contains experiments conducted to showcase the capabilities of the [ROS_RL](https://github.com/ncbdrck/ros_rl) framework. 
+
+Here we show how to train a simple reach task using the [Rx200](https://www.trossenrobotics.com/reactorx-200-robot-arm.aspx robot.
  
-This framework provides the following features:
- 1. Training the task directly in the real world (No need of a simulation environment)
- 2. Training in simulation (using [MultiROS](https://github.com/ncbdrck/multiros) package) and deploying the trained model in the real world
- 3. Real-time training with simulation and real-world data for obtaining better generalization
+This repo demonstrate the following features:
+ 1. Training the task directly in the real world (No need of a simulation environment).
+ 2. Training in simulation (using [MultiROS](https://github.com/ncbdrck/multiros) package) and deploying the trained model in the real world.
+ 3. Real-time training with simulation and real-world data for obtaining better generalization.
 
 ## Prerequisites
 
@@ -33,7 +35,7 @@ curl 'https://raw.githubusercontent.com/Interbotix/interbotix_ros_manipulators/m
 chmod +x xsarm_amd64_install.sh
 ./xsarm_amd64_install.sh -d noetic
 ```
-**Note**: Unfortunately, this will install ROS Noetic if not already installed and create a new ROS workspace in your home directory. So source your workspace accordingly.
+**Note**: This will also install ROS Noetic (if not already installed) and create a new ROS workspace in your home directory. So source your workspace accordingly.
 
 ### 4. Rx200 Robot description package
 
@@ -51,7 +53,7 @@ Please note that the instructions assume you are using Ubuntu 20.04 and ROS Noet
 
 ## Installation
 
-Follow these steps to install the example reach task
+Follow these steps to install this package:
 
 1. Clone the repository:
     ```shell
@@ -79,9 +81,9 @@ Follow these steps to install the example reach task
 ## Issues
 
 If you installed the Rx200 robot description package from the official documentation, you might encounter an error when running the example reach task.
-This is because the official documentation creates a new ROS workspace in your home directory and adds it to the bashrc file.
+This is because the official documentation creates a **new** ROS workspace in your home directory and adds it to the **bashrc** file.
 So each time you open a new terminal, the RX200 ROS workspace in your home directory is sourced instead of your catkin_ws directory.
-So either you can remove the line in the bashrc file that sources the Rx200 ROS workspace in your home directory or you can source the catkin_ws directory before running the example reach task.
+So either you can remove the line in the bashrc file or you can source the catkin_ws directory before running this repo.
 
 To source the catkin_ws directory, run the following commands in a new terminal:
 ```shell
