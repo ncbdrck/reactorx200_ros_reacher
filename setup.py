@@ -14,8 +14,6 @@ setup_args = generate_distutils_setup(
 
     author='Jayasekara Kapukotuwa',
     author_email='j.kapukotuwa@research.ait.ie',
-
-    license="MIT",
 )
 
 setup(**setup_args)
