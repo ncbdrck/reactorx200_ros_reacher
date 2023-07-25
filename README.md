@@ -81,7 +81,7 @@ Follow these steps to install this package:
     ```
 ## Issues
 
-If you have installed the Rx200 robot description package from the official documentation, you may face an error when running the scripts in this repository. This occurs because the official installation creates a new ROS workspace in your home directory and adds it to the bashrc file. As a result, each time you open a new terminal, the RX200 ROS workspace in your home directory is sourced instead of your catkin_ws directory. To resolve this, you have two options:
+If you have installed the Rx200 robot package from the official documentation, you may face an error when running the scripts in this repository. This occurs because the official installation creates a new ROS workspace in your home directory and adds it to the bashrc file. As a result, each time you open a new terminal, the RX200 ROS workspace in your home directory is sourced instead of your catkin_ws directory. To resolve this, you have two options:
 
 1. modify the line in the bashrc file that sources the RX200 ROS workspace. This will ensure that your catkin_ws directory is sourced instead when opening a new terminal.
 
