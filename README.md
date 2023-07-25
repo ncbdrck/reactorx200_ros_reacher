@@ -13,11 +13,11 @@ Before installing this package, make sure you have the following prerequisites:
 
 ### 1. ROS_RL
 
-This ROS repo requires ROS_RL to be installed. Please follow the instructions in the [ROS_RL repository]((https://github.com/ncbdrck/ros_rl)) to install ROS_RL.
+This ROS repo requires ROS_RL to be installed. Please follow the instructions in the [ROS_RL repository](https://github.com/ncbdrck/ros_rl) to install ROS_RL.
 
 ### 2. MultiROS
 
-To simulate the task, you need to install the [MultiROS](https://github.com/ncbdrck/multiros) package. Please follow the instructions in the [MultiROS repository](
+To simulate the task, you need to install the [MultiROS](https://github.com/ncbdrck/multiros) package. Please follow the instructions in the package to install it.
 
 ### 3. Rx200 Robot repository
 
