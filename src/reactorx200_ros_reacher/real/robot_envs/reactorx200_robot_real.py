@@ -5,6 +5,10 @@ import rostopic
 from gym import spaces
 from gym.envs.registration import register
 
+import numpy as np
+from sensor_msgs.msg import JointState
+from geometry_msgs.msg import Pose
+
 from ros_rl.envs import RealBaseEnv
 
 # core modules of the framework
@@ -18,19 +22,19 @@ Although it is best to register only the task environment, one can also register
 This is not necessary, but we can see if this section works by calling "gym.make" this env.
 """
 register(
-    id='MyRealRobotEnv-v0',
-    entry_point='ros_rl.templates.robot_envs.MyRealRobotEnv:MyRealRobotEnv',
+    id='RX200RobotBaseEnv-v0',
+    entry_point='reactorx200_ros_reacher.real.robot_envs.reactorx200_robot_real:RX200RobotEnv',
     max_episode_steps=100,
 )
 
 
-class MyRealRobotEnv(RealBaseEnv.RealBaseEnv):
+class RX200RobotEnv(RealBaseEnv.RealBaseEnv):
     """
-    Custom Robot Env, use this class to describe the robots and the sensors in the Environment.
+    RX200 Robot Env, use this class to describe the robots and the sensors in the Environment.
     Superclass for all Robot environments.
     """
 
-    def __init__(self, ros_port: str = None, seed: int = None, reset_env_prompt: bool = False):
+    def __init__(self, ros_port: str = None, seed: int = None, close_env_prompt: bool = False):
         """
         Initializes a new Robot Environment
 
@@ -42,7 +46,7 @@ class MyRealRobotEnv(RealBaseEnv.RealBaseEnv):
         Actuators Topic List:
             MoveIt! : MoveIt! action server is used to send the joint positions to the robot.
         """
-        rospy.loginfo("Start Init Custom Robot Env")
+        rospy.loginfo("Start Init RX200RobotEnv ROS_RL")
 
         """
         Change the ros/gazebo master
@@ -54,103 +58,34 @@ class MyRealRobotEnv(RealBaseEnv.RealBaseEnv):
         Launch a roslaunch file that will setup the connection with the real robot 
         """
 
-        load_robot = False
-        robot_pkg_name = None
-        robot_launch_file = None
-        robot_args = None  # like this ["robot_model:=rx200", "use_actual := true" , "dof:=5"])
-
-        """
-        Load URDF to parameter server
-        """
-        load_urdf = False
-
-        # location of the robot URDF file
-        urdf_pkg_name = None
-        urdf_file_name = None
-        urdf_folder = "/urdf"
-
-        # extra urdf args
-        urdf_xacro_args = None
+        load_robot = True
+        robot_pkg_name = "interbotix_xsarm_moveit_interface"
+        robot_launch_file = "xsarm_moveit_interface.launch"
+        robot_args = ["robot_model:=rx200", "use_actual:=true", "dof:=5", "use_python_interface:=true",
+                      "use_moveit_rviz:=true"]
 
         """
         namespace of the robot
         """
-        namespace = "/"
-
-        """
-        Launch the robot state publisher
-        """
-        # to launch robot state publisher
-        launch_robot_state_pub = False
-
-        # robot state publisher
-        robot_state_publisher_max_freq = None
-        new_robot_state_term = False
-
-        """
-        ROS Controllers
-        """
-        # loads controllers to parameter server
-        load_controllers = False
-
-        # controller (must be inside above pkg_name/config/)
-        controllers_file = None
-        controllers_list = None
-
-        # Set if the controllers in "controller_list" will be reset at the beginning of each episode, default is False.
-        reset_controllers = False
-
-        # Whether to prompt the user before resetting the controllers.
-        reset_controllers_prompt = False
+        namespace = "/rx200"
 
         """
         kill rosmaster at the end of the env
         """
-        kill_rosmaster = True
+        kill_rosmaster = False
 
         """
         Clean ros Logs at the end of the env
         """
-        clean_logs = False
-
-        """
-        Whether to prompt the user for resetting the environment
-        """
-        # uncomment if not defined as an arg in __init__
-        # reset_env_prompt = False
+        clean_logs = True
 
         """
         Init GazeboBaseEnv.
         """
         super().__init__(
-            load_robot=False, robot_pkg_name=None, robot_launch_file=None, robot_args=None,
-            load_urdf=load_urdf, urdf_pkg_name=urdf_pkg_name, urdf_file_name=urdf_file_name,
-            urdf_folder=urdf_folder, urdf_xacro_args=urdf_xacro_args, namespace=namespace,
-            launch_robot_state_pub=launch_robot_state_pub,
-            robot_state_publisher_max_freq=robot_state_publisher_max_freq, new_robot_state_term=new_robot_state_term,
-            load_controllers=load_controllers, controllers_file=controllers_file, controllers_list=controllers_list,
-            reset_controllers=reset_controllers, reset_controllers_prompt=reset_controllers_prompt,
-            kill_rosmaster=kill_rosmaster, clean_logs=clean_logs, ros_port=ros_port, seed=seed,
-            reset_env_prompt=reset_env_prompt)
-
-        """
-        Define ros publisher, subscribers and services for robot and sensors
-        """
-        # example: joint state
-        # self.joint_state_sub = rospy.Subscriber(self.joint_state_topic, JointState, self.joint_state_callback)
-        # self.joint_state = JointState()
-
-        # example: moveit package
-        # ros_common.ros_launch_launcher(pkg_name="interbotix_xsarm_moveit_interface",
-        #                                launch_file_name="xsarm_moveit_interface.launch",
-        #                                args=["robot_model:=rx200", "dof:=5", "use_python_interface:=true",
-        #                                      "use_moveit_rviz:=false"])
-
-        # example: object detection
-        # ros_common.ros_launch_launcher(pkg_name="reactorx200_push_vision", launch_file_name="cube_detection.launch")
-        #
-        # self.simple_object_detection_sub = rospy.Subscriber('/extended_object_detection/simple_objects',
-        #                                                     SimpleObjectArray, self.simple_object_detection_callback)
+            load_robot=load_robot, robot_pkg_name=robot_pkg_name, robot_launch_file=robot_launch_file,
+            robot_args=robot_args, namespace=namespace, kill_rosmaster=kill_rosmaster, clean_logs=clean_logs,
+            ros_port=ros_port, seed=seed, close_env_prompt=close_env_prompt)
 
         """
         Using the _check_connection_and_readiness method to check for the connection status of subscribers, publishers 
@@ -162,56 +97,95 @@ class MyRealRobotEnv(RealBaseEnv.RealBaseEnv):
         initialise controller and sensor objects here
         """
 
-        # example - Moveit object
-        # self.moveit_robot_object = MoveitROS_RL(arm_name='arm_group',
-        #                                         gripper_name='gripper_group',
-        #                                         robot_description="namespace/robot_description",
-        #                                         ns="namespace")
+        # Moveit object
+        self.move_RX200_object = MoveitROS_RL(arm_name='interbotix_arm',
+                                              gripper_name='interbotix_gripper',
+                                              robot_description="rx200/robot_description",
+                                              ns="rx200")
 
         """
         Finished __init__ method
         """
-        rospy.loginfo("End Init Custom Robot Env")
+        rospy.loginfo("End Init RX200RobotEnv")
 
     # ---------------------------------------------------
-    #   Custom methods for the Custom Robot Environment
+    #   Custom methods for the Robot Environment
 
     """
     Define the custom methods for the environment
-        * callbacks from subscribers
-        * functions to move robot
-        * functors to read data from robot
-        * etc 
+        * set_trajectory_joints: Set a joint position target only for the arm joints.
+        * set_trajectory_ee: Set a pose target for the end effector of the robot arm.
+        * get_ee_pose: Get end-effector pose a geometry_msgs/PoseStamped message
+        * get_ee_rpy: Get end-effector orientation as a list of roll, pitch, and yaw angles.
+        * get_joint_angles: Get current joint angles of the robot arm - 5 elements
+        * check_goal: Check if the goal is reachable
     """
 
-    # example:1
-    # def get_ee_pose(self):
-    #     """
-    #     Returns the end-effector pose as a geometry_msgs/PoseStamped message
-    #     """
-    #     ee_pose = self.moveit_robot_object.get_robot_pose()
-    #     return ee_pose
-    #
-    # # example:2
-    # def check_goal(self, goal):
-    #     """
-    #     Check if the goal is reachable
-    #     """
-    #     result = self.moveit_robot_object.check_goal(goal)
-    #     return result
+    def set_trajectory_joints(self, q_positions: np.ndarray) -> bool:
+        """
+        Set a joint position target only for the arm joints.
+        """
+        return self.move_RX200_object.set_trajectory_joints(q_positions)
+
+    def set_trajectory_ee(self, pos: np.ndarray) -> bool:
+        """
+        Set a pose target for the end effector of the robot arm.
+        """
+        return self.move_RX200_object.set_trajectory_ee(position=pos)
+
+    def get_ee_pose(self):
+        """
+        Returns the end-effector pose as a geometry_msgs/PoseStamped message
+
+        This gives us the best pose if we are using the moveit config of the ReactorX repo
+        They are getting the pose with ee_gripper_link
+        """
+        return self.move_RX200_object.get_robot_pose()
+
+    def get_ee_rpy(self):
+        """
+        Returns the end-effector orientation as a list of roll, pitch, and yaw angles.
+        """
+        return self.move_RX200_object.get_robot_rpy()
+
+    def get_joint_angles(self):
+        """
+        get current joint angles of the robot arm - 5 elements
+        Returns a list
+        """
+        return self.move_RX200_object.get_joint_angles_robot_arm()
+
+    def check_goal(self, goal):
+        """
+        Check if the goal is reachable
+        """
+        return self.move_RX200_object.check_goal(goal)
+
+    def _check_moveit_ready(self):
+        """
+        Function to check if moveit services are running
+        """
+        rospy.wait_for_service("/rx200/move_group/trajectory_execution/set_parameters")
+        rospy.logdebug(rostopic.get_topic_type("/rx200/planning_scene", blocking=True))
+        rospy.logdebug(rostopic.get_topic_type("/rx200/move_group/status", blocking=True))
+
+        return True
 
     # ---------------------------------------------------
-    #   Methods to override in Custom Robot Environment
+    #   Methods to override in the Robot Environment
 
     def _check_connection_and_readiness(self):
         """
         Function to check the connection status of subscribers, publishers and services, as well as the readiness of
         all systems.
         """
+        self._check_moveit_ready()
+
+        rospy.loginfo("All system are ready!")
         return True
 
     # ---------------------------------------------------
-    #    Methods to override in Custom Task Environment
+    #    Methods to override in the Task Environment
 
     def _set_action(self, action):
         """
