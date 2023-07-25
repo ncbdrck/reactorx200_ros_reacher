@@ -95,7 +95,7 @@ cd ~/catkin_ws/
 source devel/setup.bash
 rospack profile
 ```
-If you encounter any issues while installing or running the scripts, please open an issue in this repository.
+If you encounter any issues while installing or running the scripts in the repo, please open an issue in this repository.
 
 
 ## Contact
