@@ -20,4 +20,19 @@ register(
 
 
 # ---------------------------- Real Environments  ----------------------------
-# RX200 Reacher Multiros Default Environment
+
+# RX200 Reacher ROS_RL Default Environment
+
+register(
+    id='RX200ReacherEnvReal-v0',
+    entry_point='reactorx200_ros_reacher.real.task_envs.reactorx200_reacher_real:RX200ReacherEnv',
+    max_episode_steps=100,
+)
+
+# RX200 Reacher ROS_RL Goal Environment
+
+register(
+    id='RX200ReacherGoalEnvReal-v0',
+    entry_point='reactorx200_ros_reacher.real.task_envs.reactorx200_reacher_goal_real:RX200ReacherGoalEnv',
+    max_episode_steps=100,
+)
