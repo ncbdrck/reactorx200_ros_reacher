@@ -13,7 +13,7 @@ Before installing this package, make sure you have the following prerequisites:
 
 ### 1. ROS_RL
 
-This ROS repo requires **ROS_RL** to be installed to train or evaluate the task in the real world. Please follow the instructions in the [ROS_RL repository](https://github.com/ncbdrck/ros_rl) to install ROS_RL.
+This ROS repo requires **ROS_RL** to train or evaluate the reach task in the real world. Please follow the instructions in the [ROS_RL repository](https://github.com/ncbdrck/ros_rl) to install ROS_RL.
 
 ### 2. MultiROS
 
