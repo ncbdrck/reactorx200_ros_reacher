@@ -65,8 +65,8 @@ Follow these steps to install the example reach task
     # Install pip if you haven't already by running this command
     sudo apt-get install python3-pip
 
-    # install the required Python packages for ROS_RL by running
-    cd ~/catkin_ws/src/reactorx200_description/
+    # install the required Python packages by running
+    cd ~/catkin_ws/src/reactorx200_ros_reacher/
     pip3 install -r requirements.txt
     ```
 3. Build the ROS packages and source the environment:
