@@ -49,6 +49,25 @@ catkin build
 source devel/setup.bash
 ```
 
+### 5. SB3 ROS Support Package
+
+This package contains the necessary scripts to train and evaluate the reach task using Stable Baselines3. You can download it from [here](https://github.com/ncbdrck/sb3_ros_support) and follow the instructions to install it.
+```shell
+# download the package
+cd ~/catkin_ws/src
+git clone https://github.com/ncbdrck/sb3_ros_support.git
+
+# install the required Python packages by running
+cd ~/catkin_ws/src/sb3_ros_support/
+pip3 install -r requirements.txt
+
+# build the ROS packages and source the environment:
+cd ~/catkin_ws/
+rosdep install --from-paths src --ignore-src -r -y
+catkin build
+source devel/setup.bash
+```
+
 Please note that the instructions assume you are using Ubuntu 20.04 and ROS Noetic. If you are using a different operating system or ROS version, make sure to adapt the commands accordingly.
 
 ## Installation
