@@ -39,7 +39,7 @@ chmod +x xsarm_amd64_install.sh
 
 ### 4. Rx200 Robot description package
 
-This package contains the URDF description of the Rx200 robot. It is a modified version of the original URDF which is necessary to execute this example. You can download it from [here](https://github.com/ncbdrck/rx200_supporting_materials) and follow the instructions to install it.
+This package contains the URDF description of the Rx200 robot. It is a modified version of the original URDF and is necessary to execute this example. You can download it from [here](https://github.com/ncbdrck/rx200_supporting_materials) and follow the instructions to install it.
 ```shell
 cd ~/catkin_ws/src
 git clone https://github.com/ncbdrck/rx200_supporting_materials
