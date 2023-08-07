@@ -5,7 +5,7 @@ This repository contains experiments conducted to showcase the capabilities of t
 Here we show how to train a simple reach task using the [Rx200](https://www.trossenrobotics.com/reactorx-200-robot-arm.aspx) robot.
  
 This repo demonstrate the following features:
- 1. Training the task directly in the real world (No need of a simulation environment - [ROS_RL](https://github.com/ncbdrck/ros_rl) is required). 
+ 1. Training the task directly in the real world (No need of a simulation environment - only [ROS_RL](https://github.com/ncbdrck/ros_rl) is required). 
  2. Training in simulation (using [MultiROS](https://github.com/ncbdrck/multiros) package) and deploying the trained model in the real world.
  3. Real-time training with simulation and real-world data for obtaining better generalization.
 
