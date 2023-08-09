@@ -17,11 +17,11 @@ from ros_rl.utils import ros_common
 from ros_rl.utils import ros_markers
 
 # Register your environment using the OpenAI register method to utilize gym.make("TaskEnv-v0").
-# register(
-#     id='RX200ReacherEnvReal-v0',
-#     entry_point='reactorx200_ros_reacher.real.task_envs.reactorx200_reacher_real:RX200ReacherEnv',
-#     max_episode_steps=100,
-# )
+register(
+    id='RX200ReacherEnvReal-v0',
+    entry_point='reactorx200_ros_reacher.real.task_envs.reactorx200_reacher_real:RX200ReacherEnv',
+    max_episode_steps=100,
+)
 
 
 class RX200ReacherEnv(reactorx200_robot_real.RX200RobotEnv):
