@@ -12,7 +12,8 @@ from multiros.core import multiros_gym
 from multiros.utils import ros_common
 
 # Environments are registered inside the main __init__.py of the reactorx200_ros_reacher package
-import reactorx200_ros_reacher
+# import reactorx200_ros_reacher
+from reactorx200_ros_reacher.sim.task_envs import reactorx200_reacher_sim, reactorx200_reacher_goal_sim
 
 # Models
 from sb3_ros_support.sac import SAC
