@@ -20,11 +20,11 @@ from multiros.utils import ros_common
 from multiros.utils import ros_markers
 
 # Register your environment using the OpenAI register method to utilize gym.make("MyTaskGoalEnv-v0").
-# register(
-#     id='RX200ReacherGoalEnvSim-v0',
-#     entry_point='reactorx200_ros_reacher.sim.task_envs.reactorx200_reacher_goal_sim:RX200ReacherGoalEnv',
-#     max_episode_steps=100,
-# )
+register(
+    id='RX200ReacherGoalEnvSim-v0',
+    entry_point='reactorx200_ros_reacher.sim.task_envs.reactorx200_reacher_goal_sim:RX200ReacherGoalEnv',
+    max_episode_steps=100,
+)
 
 
 class RX200ReacherGoalEnv(reactorx200_robot_goal_sim.RX200RobotGoalEnv):
