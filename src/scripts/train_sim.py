@@ -30,6 +30,9 @@ if __name__ == '__main__':
     # Kill all processes related to previous runs
     # ros_common.kill_all_ros_and_gazebo()
 
+    # Clear ROS logs
+    # ros_common.clean_ros_logs()
+
     # --- normal environments
     env = multiros_gym.make('RX200ReacherEnvSim-v0', gazebo_gui=False, ee_action_type=False,
                             delta_action=False)

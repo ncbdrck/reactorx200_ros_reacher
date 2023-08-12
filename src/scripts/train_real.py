@@ -27,6 +27,9 @@ if __name__ == '__main__':
     # Kill all processes related to previous runs
     # ros_common.kill_all_ros_processes()
 
+    # Clear ROS logs
+    # ros_common.clean_ros_logs()
+
     # --- normal environments
     env = ros_rl_gym.make('RX200ReacherEnvReal-v0', ee_action_type=False, delta_action=False)
 
