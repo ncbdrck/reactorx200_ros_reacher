@@ -43,7 +43,7 @@ class RX200RobotEnv(GazeboBaseEnv.GazeboBaseEnv):
     """
 
     def __init__(self, ros_port: str = None, gazebo_port: str = None, gazebo_pid=None, seed: int = None,
-                 real_time: bool = False, observation_rate=None, action_rate=None):
+                 real_time: bool = False, sensor_rate=None, action_rate=None):
         """
         Initializes a new Robot Environment
 
@@ -68,7 +68,7 @@ class RX200RobotEnv(GazeboBaseEnv.GazeboBaseEnv):
         parameters
         """
         self.real_time = real_time  # if True, the simulation will run in real time
-        self.observation_rate = observation_rate  # rate of the observation loop
+        self.sensor_rate = sensor_rate  # rate of the sensor loop
         self.action_rate = action_rate  # rate of the action loop
 
         # we don't need to pause/unpause gazebo if we are running in real time
@@ -232,8 +232,8 @@ class RX200RobotEnv(GazeboBaseEnv.GazeboBaseEnv):
                                                 ns="rx200")
 
         # For real time, we need to start the sensor read loop
-        if self.real_time and self.observation_rate is not None:
-            rospy.Timer(rospy.Duration(1.0 / self.observation_rate), self.sensor_read_loop)
+        if self.real_time and self.sensor_rate is not None:
+            rospy.Timer(rospy.Duration(1.0 / self.sensor_rate), self.sensor_read_loop)
 
         # For real time, we need to start the action loop
         if self.real_time and self.action_rate is not None:
