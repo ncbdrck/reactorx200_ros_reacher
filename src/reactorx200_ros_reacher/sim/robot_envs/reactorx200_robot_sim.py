@@ -44,7 +44,7 @@ class RX200RobotEnv(GazeboBaseEnv.GazeboBaseEnv):
 
     def __init__(self, ros_port: str = None, gazebo_port: str = None, gazebo_pid=None, seed: int = None):
         """
-        Initializes a new Robot Goal Environment
+        Initializes a new Robot Environment
 
         Describe the robot and the sensors used in the env.
 
