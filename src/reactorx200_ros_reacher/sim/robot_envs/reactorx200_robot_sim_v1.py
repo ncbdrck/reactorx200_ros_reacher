@@ -231,16 +231,6 @@ class RX200RobotEnv(GazeboBaseEnv.GazeboBaseEnv):
                                                 robot_description="rx200/robot_description",
                                                 ns="rx200")
 
-        # For real time, we need to start the sensor read loop
-        if self.real_time and self.sensor_rate is not None:
-            rospy.Timer(rospy.Duration(1.0 / self.sensor_rate), self.sensor_read_loop)
-
-        # For real time, we need to start the action loop
-        if self.real_time and self.action_rate is not None:
-            # Initialize the current action
-            self.current_action = None  # we can set this in the Task Environment
-            rospy.Timer(rospy.Duration(1.0 / self.action_rate), self.execute_action_loop)
-
         """
         Finished __init__ method
         """
@@ -261,20 +251,6 @@ class RX200RobotEnv(GazeboBaseEnv.GazeboBaseEnv):
         * get_joint_angles: Get current joint angles of the robot arm - 5 elements
         * check_goal: Check if the goal is reachable
     """
-    def execute_action_loop(self, event):
-        """
-        Function to execute the action loop at a given rate.
-        """
-        if self.current_action is not None:
-            self._set_action(self.current_action)
-
-    def sensor_read_loop(self, event):
-        """
-        Funtion to sample the sensors of the robot at a given rate.
-        """
-        ee_pos_tmp = self.move_RX200_object.get_robot_pose()
-        self.ee_pos = np.array([ee_pos_tmp.pose.position.x, ee_pos_tmp.pose.position.y, ee_pos_tmp.pose.position.z])
-        self.joint_values = self.get_joint_angles()
 
     def joint_state_callback(self, joint_state):
         """
