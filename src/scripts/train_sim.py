@@ -29,13 +29,13 @@ from multiros.wrappers.time_limit_wrapper import TimeLimitWrapper
 if __name__ == '__main__':
 
     # Kill all processes related to previous runs
-    # ros_common.kill_all_ros_and_gazebo()
+    ros_common.kill_all_ros_and_gazebo()
 
     # Clear ROS logs
     # ros_common.clean_ros_logs()
 
     # --- normal environments
-    env = multiros_gym.make('RX200ReacherEnvSim-v1', gazebo_gui=True, ee_action_type=False,
+    env = gym.make('RX200ReacherEnvSim-v1', gazebo_gui=False, ee_action_type=False,
                             delta_action=True, real_time=True, environment_loop_rate=50.0, action_cycle_time=0.1)
 
     # --- goal-conditioned environments
