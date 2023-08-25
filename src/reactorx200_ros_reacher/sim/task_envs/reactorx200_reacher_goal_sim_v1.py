@@ -288,13 +288,15 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim_v1.RX200RobotGoalEnv):
         self.real_time = real_time  # This is already done in the super class. So this is just for readability
 
         if environment_loop_rate is not None and real_time:
-            rospy.Timer(rospy.Duration(1.0 / environment_loop_rate), self.environment_loop)
             self.obs_r = None
             self.reward_r = None
             self.done_r = None
             self.info_r = {}
             self.current_action = None
             self.init_done = False  # we don't need to execute the loop until we reset the env
+
+            # create a timer to run the environment loop
+            rospy.Timer(rospy.Duration(1.0 / environment_loop_rate), self.environment_loop)
 
         """
         Finished __init__ method
@@ -317,8 +319,8 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim_v1.RX200RobotGoalEnv):
         # make the current action None to stop execution for real time envs and also stop the env loop
         if self.real_time:
             self.init_done = False  # we don't need to execute the loop until we reset the env
-            self.move_RX200_object.stop_arm()  # stop the arm if it is moving
             self.current_action = None
+            self.move_RX200_object.stop_arm()  # stop the arm if it is moving
 
             # init the real time variables
             self.obs_r = None
@@ -353,7 +355,7 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim_v1.RX200RobotGoalEnv):
         self.goal_marker.publish()
 
         # get initial ee pos and joint values (we need this for delta actions)
-        # we don't need this because we reset env just before we start the episode (but just incase)
+        # we don't need this because we reset env just before we start the episode (but just in case)
         self.ee_pos = self.get_ee_pose()
         self.joint_values = self.get_joint_angles()
 
