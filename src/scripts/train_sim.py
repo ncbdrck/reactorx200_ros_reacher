@@ -15,6 +15,7 @@ from multiros.utils import ros_common
 # import reactorx200_ros_reacher
 # or
 from reactorx200_ros_reacher.sim.task_envs import reactorx200_reacher_sim, reactorx200_reacher_goal_sim
+from reactorx200_ros_reacher.sim.task_envs import reactorx200_reacher_sim_v1, reactorx200_reacher_goal_sim_v1
 
 # Models
 from sb3_ros_support.sac import SAC
@@ -34,12 +35,12 @@ if __name__ == '__main__':
     # ros_common.clean_ros_logs()
 
     # --- normal environments
-    env = multiros_gym.make('RX200ReacherEnvSim-v0', gazebo_gui=False, ee_action_type=False,
-                            delta_action=False)
+    env = multiros_gym.make('RX200ReacherEnvSim-v1', gazebo_gui=False, ee_action_type=False,
+                            delta_action=True, real_time=True, environment_loop_rate=100.0, action_cycle_time=0.1)
 
     # --- goal-conditioned environments
-    # env = multiros_gym.make('RX200ReacherGoalEnvSim-v0', gazebo_gui=False, ee_action_type=False,
-    #                delta_action=False, reward_type="sparse")
+    # env = multiros_gym.make('RX200ReacherGoalEnvSim-v1', gazebo_gui=False, ee_action_type=False,
+    #                delta_action=True, reward_type="sparse", environment_loop_rate=100.0, action_cycle_time=0.1)
 
     # Normalize action space
     env = NormalizeActionWrapper(env)
