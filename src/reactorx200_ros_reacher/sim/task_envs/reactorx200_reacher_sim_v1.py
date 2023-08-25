@@ -8,7 +8,7 @@ from gym.envs.registration import register
 import scipy.spatial
 
 # Custom robot env
-from reactorx200_ros_reacher.sim.robot_envs import reactorx200_robot_sim
+from reactorx200_ros_reacher.sim.robot_envs import reactorx200_robot_sim_v1
 
 # core modules of the framework
 from multiros.utils import gazebo_core
@@ -19,16 +19,25 @@ from multiros.utils import ros_common
 from multiros.utils import ros_controllers
 from multiros.utils import ros_markers
 
-
 # Register your environment using the OpenAI register method to utilize gym.make("TaskEnv-v0").
 register(
-    id='RX200ReacherEnvSim-v0',
-    entry_point='reactorx200_ros_reacher.sim.task_envs.reactorx200_reacher_sim:RX200ReacherEnv',
+    id='RX200ReacherEnvSim-v1',
+    entry_point='reactorx200_ros_reacher.sim.task_envs.reactorx200_reacher_sim_v1:RX200ReacherEnv',
     max_episode_steps=100,
 )
 
+"""
+This is the v1 of the RX200 Reacher Task Environment. Following are the new features of this environment:
+    * Added support for Real time RL environment
+    * We have new parameters for the environment - real_time, environment_loop_rate, action_cycle_time
+    * We have a new method called environment_loop() for real time RL environments. 
+    This method is called by a timer so that we can run the environment at a given rate.
+    * We also modified the methods _set_action(), _get_observation(), _get_reward() and _is_done() to support real time
+    
+"""
 
-class RX200ReacherEnv(reactorx200_robot_sim.RX200RobotEnv):
+
+class RX200ReacherEnv(reactorx200_robot_sim_v1.RX200RobotEnv):
     """
     This Task env is for a simple Reach Task with the RX200 robot.
 
@@ -37,7 +46,7 @@ class RX200ReacherEnv(reactorx200_robot_sim.RX200RobotEnv):
 
     Here
         * Action Space - Continuous (5 actions or 3 actions) - Joint positions or x,y,z position of the EE
-        * Observation  - Continuous (12 obs)
+        * Observation - Continuous (12 obs)
 
     Init Args:
         * launch_gazebo: Whether to launch Gazebo or not. If False, it is assumed that Gazebo is already running.
@@ -46,15 +55,19 @@ class RX200ReacherEnv(reactorx200_robot_sim.RX200RobotEnv):
         * gazebo_paused: Whether to launch Gazebo in a paused state or not.
         * gazebo_gui: Whether to launch Gazebo with the GUI or not.
         * seed: Seed for the random number generator.
-        * reward_type: Type of reward to be used. Can be "Sparse" or "Dense".
+        * reward_type: Type of reward to be used. It Can be "Sparse" or "Dense".
         * ee_action_type: Whether to use the end-effector action space or the joint action space.
         * delta_action: Whether to use the delta actions or the absolute actions.
         * delta_coeff: Coefficient to be used for the delta actions.
+        * real_time: Whether to use real time or not.
+        * environment_loop_rate: Rate at which the environment should run.
+        * action_cycle_time: Time to wait between two consecutive actions.
     """
 
     def __init__(self, launch_gazebo: bool = True, new_roscore: bool = True, roscore_port: str = None,
                  gazebo_paused: bool = False, gazebo_gui: bool = False, seed: int = None, reward_type: str = "Dense",
-                 ee_action_type: bool = False, delta_action: bool = False, delta_coeff: float = 0.05):
+                 ee_action_type: bool = False, delta_action: bool = False, delta_coeff: float = 0.05,
+                 real_time: bool = False, environment_loop_rate: float = None, action_cycle_time: float = 0.0):
 
         """
         variables to keep track of ros, gazebo ports and gazebo pid
@@ -231,7 +244,19 @@ class RX200ReacherEnv(reactorx200_robot_sim.RX200RobotEnv):
         """
         Init super class.
         """
-        super().__init__(ros_port=ros_port, gazebo_port=gazebo_port, gazebo_pid=gazebo_pid, seed=seed)
+        super().__init__(ros_port=ros_port, gazebo_port=gazebo_port, gazebo_pid=gazebo_pid, seed=seed,
+                         real_time=real_time, action_cycle_time=action_cycle_time)
+
+        # real time parameters
+        self.real_time = real_time  # This is already done in the super class. So this is just for readability
+
+        if environment_loop_rate is not None and real_time:
+            rospy.Timer(rospy.Duration(1.0 / environment_loop_rate), self.environment_loop)
+            self.obs_r = None
+            self.reward_r = None
+            self.done_r = None
+            self.info_r = None
+            self.current_action = None
 
         """
         Finished __init__ method
@@ -287,6 +312,93 @@ class RX200ReacherEnv(reactorx200_robot_sim.RX200RobotEnv):
         """
         Function to apply an action to the robot.
 
+        Args:
+            action: The action to be applied to the robot.
+        """
+        # real time env
+        if self.real_time:
+            self.current_action = action.copy()
+            # self.execute_action(action)  # we can wait for the timer to execute the action
+
+        # normal env- Sequential
+        else:
+            self.execute_action(action)
+
+    def _get_observation(self):
+        """
+        Function to get an observation from the environment.
+
+        Returns:
+            An observation representing the current state of the environment.
+        """
+        # real time env
+        if self.real_time:
+            obs = self.obs_r.copy()
+
+        # normal env- Sequential
+        else:
+            obs = self.sample_observation()
+
+        return obs.copy()
+
+    def _get_reward(self):
+        """
+        Function to get a reward from the environment.
+
+        Returns:
+            A scalar reward value representing how well the agent is doing in the current episode.
+        """
+
+        if self.real_time:
+            reward = self.reward_r
+
+        else:
+            reward = self.calculate_reward()
+
+        return reward
+
+    def _is_done(self):
+        """
+        Function to check if the episode is done.
+
+        Returns:
+            A boolean value indicating whether the episode has ended
+            (e.g. because a goal has been reached or a failure condition has been triggered)
+        """
+
+        # real time env
+        if self.real_time:
+            done = self.done_r
+            self.info = self.info_r  # we can use this to log the success rate in stable baselines3
+
+        # normal env- Sequential
+        else:
+            done = self.check_if_done()
+
+        return done
+
+    # -------------------------------------------------------
+    #   Include any custom methods available for the MyTaskEnv class
+
+    def environment_loop(self, event):
+        """
+        Function for Environment loop for real time RL envs
+        """
+
+        # start with the observation, reward, done and info
+        self.info_r = {}
+        self.obs_r = self.sample_observation()
+        self.reward_r = self.calculate_reward()
+        self.done_r = self.check_if_done(real_time=True)
+
+        # Apply the action
+        if self.current_action is not None:
+            self.execute_action(self.current_action)
+
+    def execute_action(self, action):
+        """
+        Function to apply an action to the robot.
+
         This method should be implemented here to apply the given action to the robot. The action could be a
         joint position command, a velocity command, or any other type of command that can be applied to the robot.
 
@@ -329,7 +441,7 @@ class RX200ReacherEnv(reactorx200_robot_sim.RX200RobotEnv):
         else:
             rospy.logdebug(f"Movement was successful for --->: {action}")
 
-    def _get_observation(self):
+    def sample_observation(self):
         """
         Function to get an observation from the environment.
 
@@ -370,7 +482,7 @@ class RX200ReacherEnv(reactorx200_robot_sim.RX200RobotEnv):
 
         return obs.copy()
 
-    def _get_reward(self):
+    def calculate_reward(self):
         """
         Function to get a reward from the environment.
 
@@ -380,7 +492,7 @@ class RX200ReacherEnv(reactorx200_robot_sim.RX200RobotEnv):
             if reached: self.reached_goal_reward (positive reward)
             else: - self.mult_dist_reward * distance_to_the_goal
 
-            and as always negative rewards for each step, non execution and actions not within joint limits
+            and as always negative rewards for each step, non-execution and actions not within joint limits
 
         Returns:
             A scalar reward value representing how well the agent is doing in the current episode.
@@ -394,10 +506,10 @@ class RX200ReacherEnv(reactorx200_robot_sim.RX200RobotEnv):
         # if it's "Sparse" reward structure
         if self.reward_arc == "Sparse":
 
-            # initialize the sparse reward as negative
+            # initialise the sparse reward as negative
             reward = -1
 
-            # marker only turns green if reach is done. Otherwise, it is red.
+            # The marker only turns green if reach is done. Otherwise, it is red.
             self.goal_marker.set_color(r=1.0, g=0.0)
             self.goal_marker.set_duration(duration=5)
 
@@ -461,11 +573,11 @@ class RX200ReacherEnv(reactorx200_robot_sim.RX200RobotEnv):
 
         return reward
 
-    def _is_done(self):
+    def check_if_done(self, real_time=False):
         """
         Function to check if the episode is done.
 
-        Task is done if the EE is close enough to the goal
+        The Task is done if the EE is close enough to the goal
 
         Returns:
             A boolean value indicating whether the episode has ended
@@ -490,12 +602,12 @@ class RX200ReacherEnv(reactorx200_robot_sim.RX200RobotEnv):
             done = True
 
             # we can use this to log the success rate in stable baselines3
-            self.info['is_success'] = 1.0
+            if real_time:
+                self.info_r['is_success'] = 1.0
+            else:
+                self.info['is_success'] = 1.0
 
         return done
-
-    # -------------------------------------------------------
-    #   Include any custom methods available for the MyTaskEnv class
 
     def check_if_reach_done(self, achieved_goal, desired_goal):
         """
