@@ -8,7 +8,7 @@ from gym.envs.registration import register
 import scipy.spatial
 
 # Custom robot env
-from reactorx200_ros_reacher.sim.robot_envs import reactorx200_robot_goal_sim
+from reactorx200_ros_reacher.sim.robot_envs import reactorx200_robot_goal_sim_v1
 
 # core modules of the framework
 from multiros.utils import gazebo_core
@@ -21,13 +21,22 @@ from multiros.utils import ros_markers
 
 # Register your environment using the OpenAI register method to utilize gym.make("MyTaskGoalEnv-v0").
 register(
-    id='RX200ReacherGoalEnvSim-v0',
-    entry_point='reactorx200_ros_reacher.sim.task_envs.reactorx200_reacher_goal_sim:RX200ReacherGoalEnv',
+    id='RX200ReacherGoalEnvSim-v1',
+    entry_point='reactorx200_ros_reacher.sim.task_envs.reactorx200_reacher_goal_sim_v1:RX200ReacherGoalEnv',
     max_episode_steps=100,
 )
 
+"""
+This is the v1 of the RX200 Reacher Task Environment. Following are the new features of this environment:
+    * Added support for Real time RL environment
+    * We have new parameters for the environment - real_time, environment_loop_rate, action_cycle_time
+    * We have a new method called environment_loop() for real time RL environments. 
+    This method is called by a timer so that we can run the environment at a given rate.
+    * We also modified the methods _set_action(), _get_observation(), _get_reward() and _is_done() to support real time
+"""
 
-class RX200ReacherGoalEnv(reactorx200_robot_goal_sim.RX200RobotGoalEnv):
+
+class RX200ReacherGoalEnv(reactorx200_robot_goal_sim_v1.RX200RobotGoalEnv):
     """
     This Task env is for a simple Reach Task with the RX200 robot.
 
@@ -36,7 +45,7 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim.RX200RobotGoalEnv):
 
     Here
         * Action Space - Continuous (5 actions or 3 actions) - Joint positions or x,y,z position of the EE
-        * Observation  - Continuous (12 obs)
+        * Observation - Continuous (12 obs)
         * Desired Goal - Goal we are trying to reach
         * Achieved Goal - Position of the EE
 
@@ -51,11 +60,15 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim.RX200RobotGoalEnv):
         * ee_action_type: Whether to use the end-effector action space or the joint action space.
         * delta_action: Whether to use the delta actions or the absolute actions.
         * delta_coeff: Coefficient to be used for the delta actions.
+        * real_time: Whether to use real time or not.
+        * environment_loop_rate: Rate at which the environment should run.
+        * action_cycle_time: Time to wait between two consecutive actions.
     """
 
     def __init__(self, launch_gazebo: bool = True, new_roscore: bool = True, roscore_port: str = None,
                  gazebo_paused: bool = False, gazebo_gui: bool = False, seed: int = None, reward_type: str = "sparse",
-                 ee_action_type: bool = False, delta_action: bool = False, delta_coeff: float = 0.05):
+                 ee_action_type: bool = False, delta_action: bool = False, delta_coeff: float = 0.05,
+                 real_time: bool = False, environment_loop_rate: float = None, action_cycle_time: float = 0.0):
 
         """
         variables to keep track of ros, gazebo ports and gazebo pid
@@ -268,7 +281,20 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim.RX200RobotGoalEnv):
         """
         Init super class.
         """
-        super().__init__(ros_port=ros_port, gazebo_port=gazebo_port, gazebo_pid=gazebo_pid, seed=seed)
+        super().__init__(ros_port=ros_port, gazebo_port=gazebo_port, gazebo_pid=gazebo_pid, seed=seed,
+                         real_time=real_time, action_cycle_time=action_cycle_time)
+
+        # real time parameters
+        self.real_time = real_time  # This is already done in the super class. So this is just for readability
+
+        if environment_loop_rate is not None and real_time:
+            rospy.Timer(rospy.Duration(1.0 / environment_loop_rate), self.environment_loop)
+            self.obs_r = None
+            self.reward_r = None
+            self.done_r = None
+            self.info_r = {}
+            self.current_action = None
+            self.init_done = False  # we don't need to execute the loop until we reset the env
 
         """
         Finished __init__ method
@@ -288,12 +314,26 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim.RX200RobotGoalEnv):
         """
         rospy.loginfo("Initialising the init params!")
 
+        # make the current action None to stop execution for real time envs and also stop the env loop
+        if self.real_time:
+            self.init_done = False  # we don't need to execute the loop until we reset the env
+            self.move_RX200_object.stop_arm()  # stop the arm if it is moving
+            self.current_action = None
+
+            # init the real time variables
+            self.obs_r = None
+            self.reward_r = None
+            self.done_r = None
+            self.info_r = {}
+
         # Initial robot pose - Home
         self.init_pos = np.array([0.0, 0.0, 0.0, 0.0, 0.0])
 
-        # move the robot to home
-        result = self.set_trajectory_joints(self.init_pos)
-        if not result:
+        # move the robot to the home pose
+        # we need to wait for the movement to finish
+        # we define the movement result here so that we can use it in the environment loop (we need it for dense reward)
+        self.movement_result = self.move_RX200_object.set_trajectory_joints(self.init_pos)
+        if not self.movement_result:
             rospy.logwarn("Homing failed!")
 
         #  Get a random Reach goal - np.array
@@ -317,9 +357,140 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim.RX200RobotGoalEnv):
         self.ee_pos = self.get_ee_pose()
         self.joint_values = self.get_joint_angles()
 
+        # We can start the environment loop now
+        if self.real_time:
+            self.init_done = True
+
         rospy.loginfo("Initialising init params done--->")
 
     def _set_action(self, action):
+        """
+        Function to apply an action to the robot.
+
+        Args:
+            action: Joint positions (numpy array)
+        """
+        # real time env
+        if self.real_time:
+            self.current_action = action.copy()
+            # self.execute_action(action)  # we can wait for the timer to execute the action
+
+        # normal env- Sequential
+        else:
+            self.execute_action(action)
+
+    def _get_observation(self):
+        """
+        Function to get an observation from the environment.
+
+        Returns:
+            An observation representing the current state of the environment.
+        """
+        # real time env
+        if self.real_time:
+            obs = self.obs_r.copy()
+
+        # normal env- Sequential
+        else:
+            obs = self.sample_observation()
+
+        # incase we don't have an observation yet for real time envs
+        if obs is None:
+            obs = self.sample_observation()
+
+        return obs.copy()
+
+    def _get_achieved_goal(self):
+        """
+        Get the achieved goal from the environment.
+
+        Returns:
+            achieved_goal: EE position
+        """
+        return self.ee_pos.copy()
+
+    def _get_desired_goal(self):
+        """
+        Get the desired goal from the environment.
+
+        Returns:
+            desired_goal: Reach Goal
+        """
+        return self.reach_goal.copy()
+
+    def compute_reward(self, achieved_goal, desired_goal, info) -> float:
+        """
+        Compute the reward for achieving a given goal.
+
+        Args:
+            achieved_goal: EE position
+            desired_goal: Reach Goal
+            info (dict): Additional information about the environment.
+
+        Returns:
+            reward (float): The reward for achieving the given goal.
+        """
+        # real time env
+        if self.real_time:
+            reward = self.reward_r
+
+        # normal env- Sequential
+        else:
+            reward = self.calculate_reward(achieved_goal, desired_goal, info)
+
+        # incase we don't have a reward yet for real time envs
+        if reward is None:
+            reward = self.calculate_reward(achieved_goal, desired_goal, info)
+
+        return reward
+
+    def _is_done(self):
+        """
+        Function to check if the episode is done.
+
+        Returns:
+            A boolean value indicating whether the episode has ended
+            (e.g. because a goal has been reached or a failure condition has been triggered)
+        """
+        # real time env
+        if self.real_time:
+            done = self.done_r
+            self.info = self.info_r  # we can use this to log the success rate in stable baselines3
+
+        # normal env- Sequential
+        else:
+            done = self.check_if_done()
+
+        # incase we don't have a done yet for real time envs
+        if done is None:
+            done = self.check_if_done()
+
+        return done
+
+    # -------------------------------------------------------
+    #   Include any custom methods available for the MyTaskEnv class
+
+    def environment_loop(self, event):
+        """
+        Function for Environment loop for real time RL envs
+        """
+
+        #  we don't need to execute the loop until we reset the env
+        if self.init_done:
+
+            # start with the observation, reward, done and info
+            self.info_r = {}
+            self.obs_r = self.sample_observation()
+            self.reward_r = self.calculate_reward()
+            self.done_r = self.check_if_done(real_time=True)
+
+            # Apply the action
+            if self.current_action is not None:
+                self.execute_action(self.current_action)
+            else:
+                self.move_RX200_object.stop_arm()  # stop the arm if there is no action
+
+    def execute_action(self, action):
         """
         Function to apply an action to the robot.
 
@@ -362,17 +533,17 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim.RX200RobotGoalEnv):
         else:
             rospy.logdebug(f"Movement was successful for --->: {action}")
 
-    def _get_observation(self):
+    def sample_observation(self):
         """
         Function to get an observation from the environment.
 
-        Observations are in following order
+        Observations are in the following order
             01. EE pos - 3
-            02. Vector to the goal (normalized linear distance) - 3
+            02. Vector to the goal (normalised linear distance) - 3
             03. Euclidian distance (ee to reach goal)- 1
             04. Current Joint values - 5
 
-            total: 3x2 + 1 + 5 = 12
+            Total: 3x2 + 1 + 5 = 12
 
         Returns:
             An observation representing the current state of the environment.
@@ -403,25 +574,7 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim.RX200RobotGoalEnv):
 
         return obs.copy()
 
-    def _get_achieved_goal(self):
-        """
-        Get the achieved goal from the environment.
-
-        Returns:
-            achieved_goal: EE position
-        """
-        return self.ee_pos.copy()
-
-    def _get_desired_goal(self):
-        """
-        Get the desired goal from the environment.
-
-        Returns:
-            desired_goal: Reach Goal
-        """
-        return self.reach_goal.copy()
-
-    def compute_reward(self, achieved_goal, desired_goal, info) -> float:
+    def calculate_reward(self, achieved_goal=None, desired_goal=None, info=None) -> float:
         """
         Compute the reward for achieving a given goal.
 
@@ -431,12 +584,12 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim.RX200RobotGoalEnv):
             if reached: self.reached_goal_reward (positive reward)
             else: - self.mult_dist_reward * distance_to_the_goal
 
-            and as always negative rewards for each step, non execution and actions not within joint limits
+            And as always negative rewards for each step, non-execution and actions not within joint limits
 
         Args:
-            achieved_goal: EE position
-            desired_goal: Reach Goal
-            info (dict): Additional information about the environment.
+            achieved_goal: EE position (optional)
+            desired_goal: Reach Goal (optional)
+            info (dict): Additional information about the environment. (Optional)
 
         Returns:
             reward (float): The reward for achieving the given goal.
@@ -451,10 +604,10 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim.RX200RobotGoalEnv):
         # if it's "Sparse" reward structure
         if self.reward_arc == "Sparse":
 
-            # initialize the sparse reward as negative
+            # initialise the sparse reward as negative
             reward = -1.0
 
-            # marker only turns green if reach is done. Otherwise, it is red.
+            # The marker only turns green if reach is done. Otherwise, it is red.
             self.goal_marker.set_color(r=1.0, g=0.0)
             self.goal_marker.set_duration(duration=5)
 
@@ -518,15 +671,15 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim.RX200RobotGoalEnv):
 
         return reward
 
-    def _is_done(self):
+    def check_if_done(self, real_time=False):
         """
         Function to check if the episode is done.
 
-        Task is done if the EE is close enough to the goal
+        The Task is done if the EE is close enough to the goal
 
         Returns:
             A boolean value indicating whether the episode has ended
-            (e.g., because a goal has been reached or a failure condition has been triggered)
+            (e.g. because a goal has been reached or a failure condition has been triggered)
         """
         # this is for logging in different colours
         # Define ANSI escape codes for different colors
@@ -547,12 +700,14 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim.RX200RobotGoalEnv):
             done = True
 
             # we can use this to log the success rate in stable baselines3
-            self.info['is_success'] = 1.0
+            if real_time:
+                self.info_r['is_success'] = 1.0
+                self.current_action = None  # we don't need to execute any more actions
+                self.init_done = False  # we don't need to execute the loop until we reset the env
+            else:
+                self.info['is_success'] = 1.0
 
         return done
-
-    # -------------------------------------------------------
-    #   Include any custom methods available for the MyTaskEnv class
 
     def check_if_reach_done(self, achieved_goal, desired_goal):
         """

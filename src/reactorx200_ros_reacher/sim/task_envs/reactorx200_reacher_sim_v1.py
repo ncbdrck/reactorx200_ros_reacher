@@ -255,8 +255,9 @@ class RX200ReacherEnv(reactorx200_robot_sim_v1.RX200RobotEnv):
             self.obs_r = None
             self.reward_r = None
             self.done_r = None
-            self.info_r = None
+            self.info_r = {}
             self.current_action = None
+            self.init_done = False  # we don't need to execute the loop until we reset the env
 
         """
         Finished __init__ method
@@ -277,12 +278,26 @@ class RX200ReacherEnv(reactorx200_robot_sim_v1.RX200RobotEnv):
         """
         rospy.loginfo("Initialising the init params!")
 
+        # make the current action None to stop execution for real time envs and also stop the env loop
+        if self.real_time:
+            self.init_done = False  # we don't need to execute the loop until we reset the env
+            self.move_RX200_object.stop_arm()  # stop the arm if it is moving
+            self.current_action = None
+
+            # init the real time variables
+            self.obs_r = None
+            self.reward_r = None
+            self.done_r = None
+            self.info_r = {}
+
         # Initial robot pose - Home
         self.init_pos = np.array([0.0, 0.0, 0.0, 0.0, 0.0])
 
-        # move the robot to home
-        result = self.set_trajectory_joints(self.init_pos)
-        if not result:
+        # move the robot to the home pose
+        # we need to wait for the movement to finish
+        # we define the movement result here so that we can use it in the environment loop (we need it for dense reward)
+        self.movement_result = self.move_RX200_object.set_trajectory_joints(self.init_pos)
+        if not self.movement_result:
             rospy.logwarn("Homing failed!")
 
         #  Get a random Reach goal - np.array
@@ -305,6 +320,10 @@ class RX200ReacherEnv(reactorx200_robot_sim_v1.RX200RobotEnv):
         # we don't need this because we reset env just before we start the episode (but just incase)
         self.ee_pos = self.get_ee_pose()
         self.joint_values = self.get_joint_angles()
+
+        # We can start the environment loop now
+        if self.real_time:
+            self.init_done = True
 
         rospy.loginfo("Initialising init params done--->")
 
@@ -339,6 +358,10 @@ class RX200ReacherEnv(reactorx200_robot_sim_v1.RX200RobotEnv):
         else:
             obs = self.sample_observation()
 
+        # incase we don't have an observation yet for real time envs
+        if obs is None:
+            obs = self.sample_observation()
+
         return obs.copy()
 
     def _get_reward(self):
@@ -353,6 +376,10 @@ class RX200ReacherEnv(reactorx200_robot_sim_v1.RX200RobotEnv):
             reward = self.reward_r
 
         else:
+            reward = self.calculate_reward()
+
+        # incase we don't have a reward yet for real time envs
+        if reward is None:
             reward = self.calculate_reward()
 
         return reward
@@ -375,6 +402,10 @@ class RX200ReacherEnv(reactorx200_robot_sim_v1.RX200RobotEnv):
         else:
             done = self.check_if_done()
 
+        # incase we don't have a done yet for real time envs
+        if done is None:
+            done = self.check_if_done()
+
         return done
 
     # -------------------------------------------------------
@@ -385,15 +416,20 @@ class RX200ReacherEnv(reactorx200_robot_sim_v1.RX200RobotEnv):
         Function for Environment loop for real time RL envs
         """
 
-        # start with the observation, reward, done and info
-        self.info_r = {}
-        self.obs_r = self.sample_observation()
-        self.reward_r = self.calculate_reward()
-        self.done_r = self.check_if_done(real_time=True)
+        #  we don't need to execute the loop until we reset the env
+        if self.init_done:
 
-        # Apply the action
-        if self.current_action is not None:
-            self.execute_action(self.current_action)
+            # start with the observation, reward, done and info
+            self.info_r = {}
+            self.obs_r = self.sample_observation()
+            self.reward_r = self.calculate_reward()
+            self.done_r = self.check_if_done(real_time=True)
+
+            # Apply the action
+            if self.current_action is not None:
+                self.execute_action(self.current_action)
+            else:
+                self.move_RX200_object.stop_arm()  # stop the arm if there is no action
 
     def execute_action(self, action):
         """
@@ -604,6 +640,8 @@ class RX200ReacherEnv(reactorx200_robot_sim_v1.RX200RobotEnv):
             # we can use this to log the success rate in stable baselines3
             if real_time:
                 self.info_r['is_success'] = 1.0
+                self.current_action = None  # we don't need to execute any more actions
+                self.init_done = False  # we don't need to execute the loop until we reset the env
             else:
                 self.info['is_success'] = 1.0
 
