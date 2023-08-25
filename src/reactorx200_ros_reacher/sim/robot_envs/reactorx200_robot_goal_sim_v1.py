@@ -31,8 +31,8 @@ but you need to
     3. run the env - env = gym.make('RX200RobotGoalEnv-v0')
 """
 register(
-    id='RX200RobotGoalEnv-v0',
-    entry_point='reactorx200_ros_reacher.sim.robot_envs.reactorx200_robot_goal_sim:RX200RobotGoalEnv',
+    id='RX200RobotGoalEnv-v1',
+    entry_point='reactorx200_ros_reacher.sim.robot_envs.reactorx200_robot_goal_sim_v1:RX200RobotGoalEnv',
     max_episode_steps=1000,
 )
 
@@ -40,16 +40,22 @@ register(
 class RX200RobotGoalEnv(GazeboGoalEnv.GazeboGoalEnv):
     """
     Superclass for all RX200 Robot Goal environments.
+
+    This the v1 of the robot environment. Following are the changes from the v0:
+        * Added the option to run the simulation in real time
+        * Added the option to set the action cycle time
+        * Updated the moveit set trajectory functions to be able to run in real time
     """
 
-    def __init__(self, ros_port: str = None, gazebo_port: str = None, gazebo_pid=None, seed: int = None):
+    def __init__(self, ros_port: str = None, gazebo_port: str = None, gazebo_pid=None, seed: int = None,
+                 real_time: bool = False, action_cycle_time=0.0):
         """
         Initializes a new Robot Goal Environment
 
         Describe the robot and the sensors used in the env.
 
         Sensor Topic List:
-            MoveIt:  To get the pose and rpy of the robot.
+            MoveIt: To get the pose and rpy of the robot.
             /joint_states: JointState received for the joints of the robot
 
         Actuators Topic List:
@@ -64,9 +70,21 @@ class RX200RobotGoalEnv(GazeboGoalEnv.GazeboGoalEnv):
             ros_common.change_ros_gazebo_master(ros_port=ros_port, gazebo_port=gazebo_port)
 
         """
+        real time parameters
+        """
+        self.real_time = real_time  # if True, the simulation will run in real time
+
+        # we don't need to pause/unpause gazebo if we are running in real time
+        if self.real_time:
+            unpause_pause_physics = False
+        else:
+            unpause_pause_physics = True
+
+        """
         Unpause Gazebo
         """
-        gazebo_core.unpause_gazebo()
+        if not self.real_time:
+            gazebo_core.unpause_gazebo()
 
         """
         Spawning the robot in Gazebo
@@ -180,7 +198,8 @@ class RX200RobotGoalEnv(GazeboGoalEnv.GazeboGoalEnv):
             reset_controllers=reset_controllers, reset_mode=reset_mode, sim_step_mode=sim_step_mode,
             num_gazebo_steps=num_gazebo_steps, gazebo_max_update_rate=gazebo_max_update_rate,
             gazebo_timestep=gazebo_timestep, kill_rosmaster=kill_rosmaster, kill_gazebo=kill_gazebo,
-            clean_logs=clean_logs, ros_port=ros_port, gazebo_port=gazebo_port, gazebo_pid=gazebo_pid, seed=seed)
+            clean_logs=clean_logs, ros_port=ros_port, gazebo_port=gazebo_port, gazebo_pid=gazebo_pid, seed=seed,
+            unpause_pause_physics=unpause_pause_physics, action_cycle_time=action_cycle_time)
 
         """
         Define ros publisher, subscribers and services for robot and sensors
@@ -218,7 +237,8 @@ class RX200RobotGoalEnv(GazeboGoalEnv.GazeboGoalEnv):
         """
         Finished __init__ method
         """
-        gazebo_core.pause_gazebo()
+        if not self.real_time:
+            gazebo_core.pause_gazebo()
         rospy.loginfo("End Init RX200RobotGoalEnv")
 
     # ---------------------------------------------------
@@ -246,13 +266,21 @@ class RX200RobotGoalEnv(GazeboGoalEnv.GazeboGoalEnv):
         """
         Set a joint position target only for the arm joints.
         """
-        return self.move_RX200_object.set_trajectory_joints(q_positions)
+        if self.real_time:
+            # do not wait for the action to finish
+            return self.move_RX200_object.set_trajectory_joints(q_positions, async_move=True)
+        else:
+            return self.move_RX200_object.set_trajectory_joints(q_positions)
 
     def set_trajectory_ee(self, pos: np.ndarray) -> bool:
         """
         Set a pose target for the end effector of the robot arm.
         """
-        return self.move_RX200_object.set_trajectory_ee(position=pos)
+        if self.real_time:
+            # do not wait for the action to finish
+            return self.move_RX200_object.set_trajectory_ee(position=pos, async_move=True)
+        else:
+            return self.move_RX200_object.set_trajectory_ee(position=pos)
 
     def get_ee_pose(self):
         """
@@ -288,7 +316,8 @@ class RX200RobotGoalEnv(GazeboGoalEnv.GazeboGoalEnv):
         """
         Function to check if the joint states are received
         """
-        gazebo_core.unpause_gazebo()  # Unpause Gazebo physics
+        if not self.real_time:
+            gazebo_core.unpause_gazebo()  # Unpause Gazebo physics
 
         # Wait for the service to be available
         rospy.logdebug(rostopic.get_topic_type(self.joint_state_topic, blocking=True))
