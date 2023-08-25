@@ -228,17 +228,25 @@ class RX200RobotEnv(GazeboBaseEnv.GazeboBaseEnv):
         """
         initialise controller and sensor objects here
         """
-
-        self.move_RX200_object = MoveitMultiros(arm_name='interbotix_arm',
-                                                gripper_name='interbotix_gripper',
-                                                robot_description="rx200/robot_description",
-                                                ns="rx200")
+        if self.real_time:
+            # we don't need to pause/unpause gazebo if we are running in real time
+            self.move_RX200_object = MoveitMultiros(arm_name='interbotix_arm',
+                                                    gripper_name='interbotix_gripper',
+                                                    robot_description="rx200/robot_description",
+                                                    ns="rx200", pause_gazebo=False)
+        else:
+            self.move_RX200_object = MoveitMultiros(arm_name='interbotix_arm',
+                                                    gripper_name='interbotix_gripper',
+                                                    robot_description="rx200/robot_description",
+                                                    ns="rx200")
 
         """
         Finished __init__ method
         """
         if not self.real_time:
             gazebo_core.pause_gazebo()
+        else:
+            gazebo_core.unpause_gazebo()  # this is because loading models will pause the simulation
         rospy.loginfo("End Init RX200RobotEnv")
 
     # ---------------------------------------------------
