@@ -40,7 +40,8 @@ if __name__ == '__main__':
 
     # --- goal-conditioned environments
     # env = multiros_gym.make('RX200ReacherGoalEnvSim-v1', gazebo_gui=False, ee_action_type=False,
-    #                delta_action=True, reward_type="sparse", environment_loop_rate=100.0, action_cycle_time=0.1)
+    #                delta_action=True, reward_type="sparse", real_time=True, environment_loop_rate=100.0,
+    #                action_cycle_time=0.1)
 
     # Normalize action space
     env = NormalizeActionWrapper(env)
