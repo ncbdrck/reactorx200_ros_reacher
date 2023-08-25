@@ -295,6 +295,10 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim_v1.RX200RobotGoalEnv):
             self.current_action = None
             self.init_done = False  # we don't need to execute the loop until we reset the env
 
+            # Debug
+            self.loop_counter = 0
+            self.action_counter = 0
+
             # create a timer to run the environment loop
             rospy.Timer(rospy.Duration(1.0 / environment_loop_rate), self.environment_loop)
 
@@ -318,6 +322,8 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim_v1.RX200RobotGoalEnv):
 
         # make the current action None to stop execution for real time envs and also stop the env loop
         if self.real_time:
+            rospy.loginfo("Start resetting the env loop!")
+
             self.init_done = False  # we don't need to execute the loop until we reset the env
             self.current_action = None
             self.move_RX200_object.stop_arm()  # stop the arm if it is moving
@@ -327,6 +333,12 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim_v1.RX200RobotGoalEnv):
             self.reward_r = None
             self.done_r = None
             self.info_r = {}
+
+            # debug
+            self.loop_counter = 0
+            self.action_counter = 0
+
+            rospy.loginfo("Done resetting the env loop!")
 
         # Initial robot pose - Home
         self.init_pos = np.array([0.0, 0.0, 0.0, 0.0, 0.0])
@@ -374,7 +386,9 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim_v1.RX200RobotGoalEnv):
         """
         # real time env
         if self.real_time:
+            rospy.loginfo(f"Applying real-time action---> {action}")
             self.current_action = action.copy()
+            self.action_counter = 0  # reset the action counter
             # self.execute_action(action)  # we can wait for the timer to execute the action
 
         # normal env- Sequential
@@ -390,7 +404,10 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim_v1.RX200RobotGoalEnv):
         """
         # real time env
         if self.real_time:
-            obs = self.obs_r.copy()
+            if self.obs_r is not None:
+                obs = self.obs_r.copy()
+            else:
+                obs = None
 
         # normal env- Sequential
         else:
@@ -476,9 +493,14 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim_v1.RX200RobotGoalEnv):
         """
         Function for Environment loop for real time RL envs
         """
+        # print("init_done", self.init_done)
+        # print("current action:", self.current_action)
 
         #  we don't need to execute the loop until we reset the env
-        if self.init_done:
+        if self.init_done and self.current_action is not None:
+
+            rospy.loginfo(f"Starting RL loop --->: {self.loop_counter}")
+            self.loop_counter += 1
 
             # start with the observation, reward, done and info
             self.info_r = {}
@@ -489,6 +511,8 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim_v1.RX200RobotGoalEnv):
             # Apply the action
             if self.current_action is not None:
                 self.execute_action(self.current_action)
+                rospy.loginfo(f"Executing action --->: {self.action_counter}")
+                self.action_counter += 1
             else:
                 self.move_RX200_object.stop_arm()  # stop the arm if there is no action
 
