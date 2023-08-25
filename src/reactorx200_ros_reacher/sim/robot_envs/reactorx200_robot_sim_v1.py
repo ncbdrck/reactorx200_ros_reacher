@@ -40,10 +40,15 @@ register(
 class RX200RobotEnv(GazeboBaseEnv.GazeboBaseEnv):
     """
     Superclass for all RX200 Robot environments.
+
+    This the v1 of the robot environment. Following are the changes from the v0:
+        * Added the option to run the simulation in real time - line 75 to 81 also pass it to the BaseEnv
+        * Added the option to set the action cycle time - we can now pass it to the BaseEnv
+        * Updated the moveit set trajectory functions to be able to run in real time
     """
 
     def __init__(self, ros_port: str = None, gazebo_port: str = None, gazebo_pid=None, seed: int = None,
-                 real_time: bool = False, sensor_rate=None, action_rate=None):
+                 real_time: bool = False, action_cycle_time=0.0):
         """
         Initializes a new Robot Environment
 
@@ -68,8 +73,6 @@ class RX200RobotEnv(GazeboBaseEnv.GazeboBaseEnv):
         parameters
         """
         self.real_time = real_time  # if True, the simulation will run in real time
-        self.sensor_rate = sensor_rate  # rate of the sensor loop
-        self.action_rate = action_rate  # rate of the action loop
 
         # we don't need to pause/unpause gazebo if we are running in real time
         if self.real_time:
@@ -196,7 +199,7 @@ class RX200RobotEnv(GazeboBaseEnv.GazeboBaseEnv):
             num_gazebo_steps=num_gazebo_steps, gazebo_max_update_rate=gazebo_max_update_rate,
             gazebo_timestep=gazebo_timestep, kill_rosmaster=kill_rosmaster, kill_gazebo=kill_gazebo,
             clean_logs=clean_logs, ros_port=ros_port, gazebo_port=gazebo_port, gazebo_pid=gazebo_pid, seed=seed,
-            unpause_pause_physics=unpause_pause_physics)
+            unpause_pause_physics=unpause_pause_physics, action_cycle_time=action_cycle_time)
 
         """
         Define ros publisher, subscribers and services for robot and sensors
