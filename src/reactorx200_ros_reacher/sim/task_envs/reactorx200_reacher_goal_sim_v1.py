@@ -368,7 +368,8 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim_v1.RX200RobotGoalEnv):
 
         # get initial ee pos and joint values (we need this for delta actions)
         # we don't need this because we reset env just before we start the episode (but just in case)
-        self.ee_pos = self.get_ee_pose()
+        ee_pos_tmp = self.get_ee_pose()  # Get a geometry_msgs/PoseStamped msg
+        self.ee_pos = np.array([ee_pos_tmp.pose.position.x, ee_pos_tmp.pose.position.y, ee_pos_tmp.pose.position.z])
         self.joint_values = self.get_joint_angles()
 
         # We can start the environment loop now
