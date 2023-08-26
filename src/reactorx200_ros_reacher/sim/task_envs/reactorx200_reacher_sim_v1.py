@@ -370,6 +370,8 @@ class RX200ReacherEnv(reactorx200_robot_sim_v1.RX200RobotEnv):
         # real time env
         if self.real_time:
 
+            self.current_action = None  # we don't need to execute any more actions until we get a new action
+
             if self.obs_r is not None:
                 obs = self.obs_r.copy()
             else:
