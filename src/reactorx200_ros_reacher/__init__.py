@@ -32,6 +32,20 @@ register(
     max_episode_steps=100,
 )
 
+# RX200 Reacher Multiros Default Environment v2
+register(
+    id='RX200ReacherEnvSim-v2',
+    entry_point='reactorx200_ros_reacher.sim.task_envs.reactorx200_reacher_sim_v2:RX200ReacherEnv',
+    max_episode_steps=100,
+)
+
+# RX200 Reacher Multiros Goal Environment v2
+register(
+    id='RX200ReacherGoalEnvSim-v2',
+    entry_point='reactorx200_ros_reacher.sim.task_envs.reactorx200_reacher_goal_sim_v2:RX200ReacherGoalEnv',
+    max_episode_steps=100,
+)
+
 
 # ---------------------------- Real Environments  ----------------------------
 
