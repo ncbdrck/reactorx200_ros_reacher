@@ -39,16 +39,16 @@ if __name__ == '__main__':
     # env = gym.make('RX200ReacherEnvSim-v1', gazebo_gui=False, ee_action_type=False,
     #                         delta_action=True, real_time=True, environment_loop_rate=50.0, action_cycle_time=0.1)
 
-    # env = gym.make('RX200ReacherEnvSim-v2', gazebo_gui=True, delta_action=True, real_time=True, reward_type="dense"
-    #                environment_loop_rate=50.0, action_cycle_time=0.2, seed=0)
+    env = gym.make('RX200ReacherEnvSim-v2', gazebo_gui=False, delta_action=True, real_time=True, reward_type="dense",
+                   environment_loop_rate=50.0, action_cycle_time=0.2, seed=0)
 
     # --- goal-conditioned environments
     # env = multiros_gym.make('RX200ReacherGoalEnvSim-v1', gazebo_gui=False, ee_action_type=False,
     #                delta_action=True, reward_type="sparse", real_time=True, environment_loop_rate=100.0,
     #                action_cycle_time=0.1)
 
-    env = gym.make('RX200ReacherGoalEnvSim-v2', gazebo_gui=True, delta_action=True,
-                   reward_type="sparse", real_time=True, environment_loop_rate=50.0, action_cycle_time=0.2, seed=0)
+    # env = gym.make('RX200ReacherGoalEnvSim-v2', gazebo_gui=True, delta_action=True,
+    #                reward_type="sparse", real_time=True, environment_loop_rate=50.0, action_cycle_time=0.2, seed=0)
 
 
     # Normalize action space
@@ -78,23 +78,23 @@ if __name__ == '__main__':
     # model = SAC(env, save_path, log_path, model_pkg_path=pkg_path,
     #             config_file_pkg=pkg_path, config_filename=config_file_name)
 
-    # # Default base environments - TD3
-    # config_file_name = "td3.yaml"
-    # save_path = "/models/sim/td3/"
-    # log_path = "/logs/sim/td3/"
-    #
-    # # create the model
-    # model = TD3(env, save_path, log_path, model_pkg_path=pkg_path,
-    #             config_file_pkg=pkg_path, config_filename=config_file_name)
-
-    # Goal-conditioned environments - TD3+HER
-    config_file_name = "td3_goal.yaml"
-    save_path = "/models/sim/td3_goal/"
-    log_path = "/logs/sim/td3_goal/"
+    # Default base environments - TD3
+    config_file_name = "td3.yaml"
+    save_path = "/models/sim/td3/"
+    log_path = "/logs/sim/td3/"
 
     # create the model
-    model = TD3_GOAL(env, save_path, log_path, model_pkg_path=pkg_path,
-                     config_file_pkg=pkg_path, config_filename=config_file_name)
+    model = TD3(env, save_path, log_path, model_pkg_path=pkg_path,
+                config_file_pkg=pkg_path, config_filename=config_file_name)
+
+    # # Goal-conditioned environments - TD3+HER
+    # config_file_name = "td3_goal.yaml"
+    # save_path = "/models/sim/td3_goal/"
+    # log_path = "/logs/sim/td3_goal/"
+    #
+    # # create the model
+    # model = TD3_GOAL(env, save_path, log_path, model_pkg_path=pkg_path,
+    #                  config_file_pkg=pkg_path, config_filename=config_file_name)
 
     # train the models
     model.train()
