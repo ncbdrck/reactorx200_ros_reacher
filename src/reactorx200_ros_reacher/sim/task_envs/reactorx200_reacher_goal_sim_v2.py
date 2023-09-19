@@ -23,7 +23,7 @@ from multiros.utils import ros_markers
 register(
     id='RX200ReacherGoalEnvSim-v2',
     entry_point='reactorx200_ros_reacher.sim.task_envs.reactorx200_reacher_goal_sim_v2:RX200ReacherGoalEnv',
-    max_episode_steps=10000,
+    max_episode_steps=1000,
 )
 
 """
