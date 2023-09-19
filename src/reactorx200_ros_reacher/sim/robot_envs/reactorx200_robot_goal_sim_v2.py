@@ -10,6 +10,7 @@ import rospy
 import rostopic
 from sensor_msgs.msg import JointState
 from geometry_msgs.msg import Pose
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 # core modules of the framework
 from multiros.utils import gazebo_core
@@ -31,8 +32,8 @@ but you need to
     3. run the env - env = gym.make('RX200RobotGoalEnv-v0')
 """
 register(
-    id='RX200RobotGoalEnv-v1',
-    entry_point='reactorx200_ros_reacher.sim.robot_envs.reactorx200_robot_goal_sim_v1:RX200RobotGoalEnv',
+    id='RX200RobotGoalEnv-v2',
+    entry_point='reactorx200_ros_reacher.sim.robot_envs.reactorx200_robot_goal_sim_v2:RX200RobotGoalEnv',
     max_episode_steps=1000,
 )
 
@@ -42,9 +43,9 @@ class RX200RobotGoalEnv(GazeboGoalEnv.GazeboGoalEnv):
     Superclass for all RX200 Robot Goal environments.
 
     This the v1 of the robot environment. Following are the changes from the v0:
-        * Added the option to run the simulation in real time
-        * Added the option to set the action cycle time
-        * Updated the moveit set trajectory functions to be able to run in real time
+        * Use moveit check if the goal is reachable - joint positions
+        * Get joint states for velocity and position
+        * use ros_controllers to control the robot - more low-level control
     """
 
     def __init__(self, ros_port: str = None, gazebo_port: str = None, gazebo_pid=None, seed: int = None,
@@ -229,6 +230,12 @@ class RX200RobotGoalEnv(GazeboGoalEnv.GazeboGoalEnv):
         """
         initialise controller and sensor objects here
         """
+        self.joint_names = ["waist",
+                            "shoulder",
+                            "elbow",
+                            "wrist_angle",
+                            "wrist_rotate"]
+
         if self.real_time:
             # we don't need to pause/unpause gazebo if we are running in real time
             self.move_RX200_object = MoveitMultiros(arm_name='interbotix_arm',
@@ -240,6 +247,12 @@ class RX200RobotGoalEnv(GazeboGoalEnv.GazeboGoalEnv):
                                                     gripper_name='interbotix_gripper',
                                                     robot_description="rx200/robot_description",
                                                     ns="rx200")
+
+        # low-level control
+        # rostopic for joint trajectory controller
+        self.joint_trajectory_controller_pub = rospy.Publisher('/rx200/arm_controller/command',
+                                                               JointTrajectory,
+                                                               queue_size=10)
 
         """
         Finished __init__ method
@@ -255,6 +268,7 @@ class RX200RobotGoalEnv(GazeboGoalEnv.GazeboGoalEnv):
 
     """
     Define the custom methods for the environment
+        * move_joints: Set a joint position target only for the arm joints using low-level ros controllers.
         * joint_state_callback: Get the joint state of the robot
         * set_trajectory_joints: Set a joint position target only for the arm joints.
         * set_trajectory_ee: Set a pose target for the end effector of the robot arm.
@@ -262,6 +276,7 @@ class RX200RobotGoalEnv(GazeboGoalEnv.GazeboGoalEnv):
         * get_ee_rpy: Get end-effector orientation as a list of roll, pitch, and yaw angles.
         * get_joint_angles: Get current joint angles of the robot arm - 5 elements
         * check_goal: Check if the goal is reachable
+        * check_goal_reachable_joint_pos: Check if the goal is reachable with joint positions
     """
 
     def joint_state_callback(self, joint_state):
@@ -270,6 +285,34 @@ class RX200RobotGoalEnv(GazeboGoalEnv.GazeboGoalEnv):
         """
 
         self.joint_state = joint_state
+
+        # get the current joint positions - using this
+        self.joint_pos_all  = list(joint_state.position)
+
+        # get the current joint velocities - we are using this
+        self.current_joint_velocities = list(joint_state.velocity)
+
+        # get the current joint efforts - not using this
+        self.current_joint_efforts = list(joint_state.effort)
+
+    def move_joints(self, q_positions: np.ndarray) -> bool:
+        """
+        Set a joint position target only for the arm joints using low-level ros controllers.
+        """
+
+        # create a JointTrajectory object
+        trajectory = JointTrajectory()
+        trajectory.joint_names = self.joint_names
+        trajectory.points.append(JointTrajectoryPoint())
+        trajectory.points[0].positions = q_positions
+        trajectory.points[0].velocities = [0.0] * len(self.joint_names)
+        trajectory.points[0].accelerations = [0.0] * len(self.joint_names)
+        trajectory.points[0].time_from_start = rospy.Duration(0.5)  # start immediately
+
+        # send the trajectory to the controller
+        self.joint_trajectory_controller_pub.publish(trajectory)
+
+        return True
 
     def set_trajectory_joints(self, q_positions: np.ndarray) -> bool:
         """
@@ -320,6 +363,12 @@ class RX200RobotGoalEnv(GazeboGoalEnv.GazeboGoalEnv):
         """
         return self.move_RX200_object.check_goal(goal)
 
+    def check_goal_reachable_joint_pos(self, joint_pos):
+        """
+        Check if the goal is reachable with joint positions
+        """
+        return self.move_RX200_object.check_goal_joint_pos(joint_pos)
+
     # helper fn for _check_connection_and_readiness
     def _check_joint_states_ready(self):
         """
@@ -344,6 +393,16 @@ class RX200RobotGoalEnv(GazeboGoalEnv.GazeboGoalEnv):
 
         return True
 
+    # helper fn for _check_connection_and_readiness
+    def _check_ros_controllers_ready(self):
+        """
+        Function to check if ros controllers are running
+        """
+        rospy.logdebug(rostopic.get_topic_type("/rx200/arm_controller/state", blocking=True))
+        rospy.logdebug(rostopic.get_topic_type("/rx200/gripper_controller/state", blocking=True))
+
+        return True
+
     # ---------------------------------------------------
     #   Methods to override in the Robot Environment
 
@@ -354,6 +413,7 @@ class RX200RobotGoalEnv(GazeboGoalEnv.GazeboGoalEnv):
         """
         self._check_moveit_ready()
         self._check_joint_states_ready()
+        self._check_ros_controllers_ready()
 
         rospy.loginfo("All system are ready!")
 
