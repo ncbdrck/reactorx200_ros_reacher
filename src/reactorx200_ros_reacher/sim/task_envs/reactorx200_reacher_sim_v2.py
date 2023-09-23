@@ -223,7 +223,8 @@ class RX200ReacherEnv(reactorx200_robot_sim_v2.RX200RobotEnv):
             np.array([self.position_goal_min["x"], self.position_goal_min["y"], self.position_goal_min["z"]]))
 
         # -- goal space for sampling
-        self.goal_space = spaces.Box(low=low_goal_pos_range, high=high_goal_pos_range, dtype=np.float32)
+        self.goal_space = spaces.Box(low=low_goal_pos_range, high=high_goal_pos_range, dtype=np.float32,
+                                     seed=seed)
 
         """
         Define subscribers/publishers and Markers as needed.
