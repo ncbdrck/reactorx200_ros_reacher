@@ -283,7 +283,7 @@ class RX200ReacherEnv(reactorx200_robot_sim_v2.RX200RobotEnv):
         self.init_pos = np.array([0.0, 0.0, 0.0, 0.0, 0.0])
 
         # stop the robot and move to home
-        # self.move_RX200_object.stop_arm()
+        self.move_RX200_object.stop_arm()
         # self.move_joints(self.init_pos)
 
         # make the current action None to stop execution for real time envs and also stop the env loop
