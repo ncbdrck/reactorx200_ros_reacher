@@ -20,11 +20,11 @@ from multiros.utils import ros_controllers
 from multiros.utils import ros_markers
 
 # Register your environment using the OpenAI register method to utilize gym.make("TaskEnv-v0").
-register(
-    id='RX200ReacherEnvSim-v1',
-    entry_point='reactorx200_ros_reacher.sim.task_envs.reactorx200_reacher_sim_v1:RX200ReacherEnv',
-    max_episode_steps=100,
-)
+# register(
+#     id='RX200ReacherEnvSim-v15',
+#     entry_point='reactorx200_ros_reacher.sim.task_envs.reactorx200_reacher_sim_v1.5:RX200ReacherEnv',
+#     max_episode_steps=100,
+# )
 
 """
 This is the v1 of the RX200 Reacher Task Environment. Following are the new features of this environment:
