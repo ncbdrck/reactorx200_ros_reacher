@@ -31,6 +31,7 @@ This is the v2 of the RX200 Reacher Task Environment. Following are the new feat
     * Changed the observation - now we have the velocity of each joint as well as previous actions as part of the obs
     * We are using ros_controllers to control the robot. Low level control is done using ros_controllers
     * changed the task config file to yaml
+    * No EE action space - we are using joint action space
 """
 
 
@@ -62,7 +63,7 @@ class RX200ReacherEnv(reactorx200_robot_sim_v2.RX200RobotEnv):
 
     def __init__(self, launch_gazebo: bool = True, new_roscore: bool = True, roscore_port: str = None,
                  gazebo_paused: bool = False, gazebo_gui: bool = False, seed: int = None, reward_type: str = "Dense",
-                 delta_action: bool = False, delta_coeff: float = 0.05,
+                 delta_action: bool = True, delta_coeff: float = 0.05,
                  real_time: bool = False, environment_loop_rate: float = None, action_cycle_time: float = 0.0):
 
         """
