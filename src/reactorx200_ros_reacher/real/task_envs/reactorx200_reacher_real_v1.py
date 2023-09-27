@@ -8,7 +8,7 @@ from gym.envs.registration import register
 import scipy.spatial
 
 # Custom robot env
-from reactorx200_ros_reacher.real.robot_envs import reactorx200_robot_real
+from reactorx200_ros_reacher.real.robot_envs import reactorx200_robot_real_v1
 
 # core modules of the framework
 from ros_rl.utils import ros_common
@@ -18,13 +18,23 @@ from ros_rl.utils import ros_markers
 
 # Register your environment using the OpenAI register method to utilize gym.make("TaskEnv-v0").
 register(
-    id='RX200ReacherEnvReal-v0',
-    entry_point='reactorx200_ros_reacher.real.task_envs.reactorx200_reacher_real:RX200ReacherEnv',
-    max_episode_steps=100,
+    id='RX200ReacherEnvReal-v1',
+    entry_point='reactorx200_ros_reacher.real.task_envs.reactorx200_reacher_real_v1:RX200ReacherEnv',
+    max_episode_steps=1000,
 )
 
+"""
+This is the v1 of the RX200 Reacher Task Environment. Following are the new features of this environment:
+    * Mainly with Moveit
+    * Added support for Real time RL environment
+    * We have new parameters for the environment - real_time, environment_loop_rate, action_cycle_time
+    * Changed the observation - now we have the velocity of each joint as well as previous actions as part of the obs
+    * We have a new method called environment_loop() for real time RL environments. This method is called by a timer so that we can run the environment at a given rate.
+    * We also modified the methods _set_action(), _get_observation(), _get_reward() and _is_done() to support real time
+    * changed the task config file to yaml
+"""
 
-class RX200ReacherEnv(reactorx200_robot_real.RX200RobotEnv):
+class RX200ReacherEnv(reactorx200_robot_real_v1.RX200RobotEnv):
     """
     This Task env is for a simple Reach Task with the RX200 robot.
 
@@ -33,7 +43,7 @@ class RX200ReacherEnv(reactorx200_robot_real.RX200RobotEnv):
 
     Here
         * Action Space - Continuous (5 actions or 3 actions) - Joint positions or x,y,z position of the EE
-        * Observation  - Continuous (12 obs)
+        * Observation - Continuous (28 obs or 26 obs) - EE pos, Vector to the goal, Euclidian distance, Joint values, Previous action, Joint velocities
 
     Init Args:
         * new_roscore: Whether to launch a new roscore or not. If False, it is assumed that a roscore is already running.
@@ -44,11 +54,15 @@ class RX200ReacherEnv(reactorx200_robot_real.RX200RobotEnv):
         * ee_action_type: Whether to use the end-effector action space or the joint action space.
         * delta_action: Whether to use the delta actions or the absolute actions.
         * delta_coeff: Coefficient to be used for the delta actions.
+        * real_time: Whether to use real time or not. (Asynchronous instead of sequential)
+        * environment_loop_rate: Rate at which the environment loop should run. (in Hz)
+        * action_cycle_time: Time to wait between two consecutive actions. (in seconds)
     """
 
     def __init__(self, new_roscore: bool = False, roscore_port: str = None, seed: int = None,
                  close_env_prompt: bool = True, reward_type: str = "Dense", ee_action_type: bool = False,
-                 delta_action: bool = False, delta_coeff: float = 0.05):
+                 delta_action: bool = True, delta_coeff: float = 0.05, real_time: bool = False,
+                 environment_loop_rate: float = None, action_cycle_time: float = 0.0):
 
         """
         variables to keep track of ros port
@@ -121,11 +135,22 @@ class RX200ReacherEnv(reactorx200_robot_real.RX200RobotEnv):
         self.delta_coeff = delta_coeff
 
         """
+        Real time parameters
+        """
+        self.real_time = real_time
+
+        # for moveit
+        if real_time:
+            async_moveit = True
+        else:
+            async_moveit = False
+
+        """
         Load YAML param file
         """
 
         # add to ros parameter server
-        ros_common.ros_load_yaml(pkg_name="reactorx200_ros_reacher", file_name="reach_task_config.yaml", ns="/")
+        ros_common.ros_load_yaml(pkg_name="reactorx200_ros_reacher", file_name="reach_task_config_v1.yaml", ns="/")
         self._get_params()
 
         """
@@ -156,9 +181,11 @@ class RX200ReacherEnv(reactorx200_robot_real.RX200RobotEnv):
         01. EE pos - 3
         02. Vector to the goal (normalized linear distance) - 3
         03. Euclidian distance (ee to reach goal)- 1
-        04. Current Joint values - 5
+        04. Current Joint values - 8
+        05. Previous action - 5 or 3 (joint or ee)
+        06. Joint velocities - 8
 
-        total: (3x2) + 1 + 5 = 12
+        total: (3x2) + 1 + 5 (or 3) + (8x2) = 28 or 26
         """
 
         # ---- ee pos
@@ -175,13 +202,29 @@ class RX200ReacherEnv(reactorx200_robot_real.RX200RobotEnv):
         observations_high_dist = np.array([self.max_distance])
         observations_low_dist = np.array([0.0])
 
+        # ---- joint values
+        observations_high_joint_values = self.max_joint_angles.copy()
+        observations_low_joint_values = self.min_joint_angles.copy()
+
+        # ---- previous action
+        if self.ee_action_type:
+            observations_high_prev_action = self.max_ee_values.copy()
+            observations_low_prev_action = self.min_ee_values.copy()
+        else:
+            observations_high_prev_action = self.max_joint_values.copy()
+            observations_low_prev_action = self.min_joint_values.copy()
+
+        # ---- joint velocities
+        observations_high_joint_vel = self.max_joint_vel.copy()
+        observations_low_joint_vel = self.min_joint_vel.copy()
+
         high = np.concatenate(
             [observations_high_ee_pos_range, observations_high_vec_ee_goal, observations_high_dist,
-             self.max_joint_values, ])
+             observations_high_joint_values, observations_high_prev_action, observations_high_joint_vel, ])
 
         low = np.concatenate(
             [observations_low_ee_pos_range, observations_low_vec_ee_goal, observations_low_dist,
-             self.min_joint_values, ])
+             observations_low_joint_values, observations_low_prev_action, observations_low_joint_vel, ])
 
         self.observation_space = spaces.Box(low=low, high=high, dtype=np.float32)
 
@@ -195,7 +238,7 @@ class RX200ReacherEnv(reactorx200_robot_real.RX200RobotEnv):
             np.array([self.position_goal_min["x"], self.position_goal_min["y"], self.position_goal_min["z"]]))
 
         # -- goal space for sampling
-        self.goal_space = spaces.Box(low=low_goal_pos_range, high=high_goal_pos_range, dtype=np.float32)
+        self.goal_space = spaces.Box(low=low_goal_pos_range, high=high_goal_pos_range, dtype=np.float32, seed=seed)
 
         """
         Define subscribers/publishers and Markers as needed.
@@ -207,7 +250,28 @@ class RX200ReacherEnv(reactorx200_robot_real.RX200RobotEnv):
         """
         Init super class.
         """
-        super().__init__(ros_port=ros_port, seed=seed, close_env_prompt=close_env_prompt)
+        super().__init__(ros_port=ros_port, seed=seed, close_env_prompt=close_env_prompt, async_moveit=async_moveit,
+                         action_cycle_time=action_cycle_time)
+
+        # set the initial parameters for real time envs
+        if environment_loop_rate is not None and self.real_time:
+            self.obs_r = None
+            self.reward_r = None
+            self.done_r = None
+            self.info_r = {}
+            self.current_action = None
+            self.init_done = False  # we don't need to execute the loop until we reset the env
+            self.prev_action = None
+
+            # Debug
+            self.loop_counter = 0
+            self.action_counter = 0
+
+            # create a timer to run the environment loop
+            rospy.Timer(rospy.Duration(1.0 / environment_loop_rate), self.environment_loop)
+
+        # for dense reward calculation
+        self.action_not_in_limits = False
 
         """
         Finished __init__ method
@@ -231,8 +295,14 @@ class RX200ReacherEnv(reactorx200_robot_real.RX200RobotEnv):
         # Initial robot pose - Home
         self.init_pos = np.array([0.0, 0.0, 0.0, 0.0, 0.0])
 
-        # move the robot to home
-        result = self.set_trajectory_joints(self.init_pos)
+        # make the current action None to stop execution for real time envs and also stop the env loop
+        if self.real_time:
+            self.init_done = False  # we don't need to execute the loop until we reset the env
+            self.current_action = None
+
+        # stop the robot and move to the Home
+        self.move_RX200_object.stop_arm()
+        result = self.move_RX200_object.set_trajectory_joints(self.init_pos)
         if not result:
             rospy.logwarn("Homing failed!")
 
@@ -258,10 +328,148 @@ class RX200ReacherEnv(reactorx200_robot_real.RX200RobotEnv):
         self.ee_pos = np.array([ee_pos_tmp.pose.position.x, ee_pos_tmp.pose.position.y, ee_pos_tmp.pose.position.z])
         self.joint_values = self.get_joint_angles()
 
+        # for dense reward calculation
+        self.action_not_in_limits = False
+
+        # We can start the environment loop now
+        if self.real_time:
+            rospy.loginfo("Start resetting the env loop!")
+            self.prev_action = self.init_pos.copy()
+
+            # init the real time variables
+            self.obs_r = None
+            self.reward_r = None
+            self.done_r = None
+            self.info_r = {}
+
+            # debug
+            self.loop_counter = 0
+            self.action_counter = 0
+
+            rospy.loginfo("Done resetting the env loop!")
+
+            self.init_done = True
+
         rospy.loginfo("Initialising init params done--->")
 
 
     def _set_action(self, action):
+        """
+        Function to apply an action to the robot.
+
+        Args:
+            action: The action to be applied to the robot.
+        """
+        # real time env
+        if self.real_time:
+            rospy.loginfo(f"Applying real-time action---> {action}")
+
+            self.current_action = action.copy()
+            self.prev_action = action.copy()
+            self.action_counter = 0  # reset the action counter
+
+        # normal env- Sequential
+        else:
+            self.execute_action(action)
+
+    def _get_observation(self):
+        """
+        Function to get an observation from the environment.
+
+        Returns:
+            An observation representing the current state of the environment.
+        """
+        # real time env
+        if self.real_time:
+
+            if self.obs_r is not None:
+                obs = self.obs_r.copy()
+            else:
+                obs = None
+
+        # normal env- Sequential
+        else:
+            obs = self.sample_observation()
+
+        # incase we don't have an observation yet for real time envs
+        if obs is None:
+            obs = self.sample_observation()
+
+        return obs.copy()
+
+    def _get_reward(self):
+        """
+        Function to get a reward from the environment.
+
+        Returns:
+            A scalar reward value representing how well the agent is doing in the current episode.
+        """
+        if self.real_time:
+            reward = self.reward_r
+
+        else:
+            reward = self.calculate_reward()
+
+            # incase we don't have a reward yet for real time envs
+        if reward is None:
+            reward = self.calculate_reward()
+
+        return reward
+
+    def _is_done(self):
+        """
+        Function to check if the episode is done.
+
+        Returns:
+            A boolean value indicating whether the episode has ended
+            (e.g., because a goal has been reached or a failure condition has been triggered)
+        """
+
+        # real time env
+        if self.real_time:
+            done = self.done_r
+            self.info = self.info_r  # we can use this to log the success rate in stable baselines3
+
+        # normal env- Sequential
+        else:
+            done = self.check_if_done()
+
+        # incase we don't have a done yet for real time envs
+        if done is None:
+            done = self.check_if_done()
+
+        return done
+
+    # -------------------------------------------------------
+    #   Include any custom methods available for the MyTaskEnv class
+
+    def environment_loop(self, event):
+        """
+        Function for Environment loop for real time RL envs
+        """
+
+        #  we don't need to execute the loop until we reset the env
+        if self.init_done and self.current_action is not None:
+
+            rospy.loginfo(f"Starting RL loop --->: {self.loop_counter}")
+            self.loop_counter += 1
+
+            # start with the observation, reward, done and info
+            self.info_r = {}
+            self.obs_r = self.sample_observation()
+            self.reward_r = self.calculate_reward()
+            self.done_r = self.check_if_done(real_time=True)
+
+            # Apply the action
+            # we need this if we're done with the task we can break the loop in above done check
+            if self.current_action is not None:
+                self.execute_action(self.current_action)
+                rospy.loginfo(f"Executing action --->: {self.action_counter}")
+                self.action_counter += 1
+            else:
+                self.move_RX200_object.stop_arm()  # stop the arm if there is no action
+
+    def execute_action(self, action):
         """
         Function to apply an action to the robot.
 
@@ -281,11 +489,24 @@ class RX200ReacherEnv(reactorx200_robot_real.RX200RobotEnv):
             if self.delta_action:
                 action = self.ee_pos + (action * self.delta_coeff)
 
+            # check if the action is within the joint limits
+            min_ee_values = np.array(self.min_ee_values)
+            max_ee_values = np.array(self.max_ee_values)
+            self.action_not_in_limits = np.any(action <= (min_ee_values + 0.0001)) or np.any(
+                action >= (max_ee_values - 0.0001))
+
             # clip the action
             action = np.clip(action, self.min_ee_values, self.max_ee_values)
 
-            # execute the trajectory
-            self.movement_result = self.set_trajectory_ee(action)
+            # check if we can reach the goal
+            if self.check_goal(action):
+                # execute the trajectory - ros_controllers
+                self.movement_result = self.set_trajectory_ee(action)
+
+            else:
+                rospy.logwarn(f"The ee pose {action} is not within the goal space!")
+                rospy.logwarn(f"Set action failed for --->: {action}")
+                self.movement_result = False
 
         # --- Joint action
         else:
@@ -294,20 +515,26 @@ class RX200ReacherEnv(reactorx200_robot_real.RX200RobotEnv):
             if self.delta_action:
                 action = self.joint_values + (action * self.delta_coeff)
 
+            # check if the action is within the joint limits
+            min_joint_values = np.array(self.min_joint_values)
+            max_joint_values = np.array(self.max_joint_values)
+            self.action_not_in_limits = np.any(action <= (min_joint_values + 0.0001)) or np.any(
+                action >= (max_joint_values - 0.0001))
+
             # clip the action
-            # rospy.logwarn(f"Action + current joint_values before clip --->: {action}")
             action = np.clip(action, self.min_joint_values, self.max_joint_values)
-            # rospy.logwarn(f"Action after --->: {action}")
 
-            # execute the trajectory
-            self.movement_result = self.set_trajectory_joints(action)
+            # check if we can reach the goal
+            if self.check_goal_reachable_joint_pos(action):
+                # execute the trajectory
+                self.movement_result = self.set_trajectory_joints(action)
 
-        if not self.movement_result:
-            rospy.logwarn(f"Set action failed for --->: {action}")
-        else:
-            rospy.logdebug(f"Movement was successful for --->: {action}")
+            else:
+                rospy.logwarn(f"The ee pose {action} is not within the goal space!")
+                rospy.logwarn(f"Set action failed for --->: {action}")
+                self.movement_result = False
 
-    def _get_observation(self):
+    def sample_observation(self):
         """
         Function to get an observation from the environment.
 
@@ -315,9 +542,11 @@ class RX200ReacherEnv(reactorx200_robot_real.RX200RobotEnv):
         01. EE pos - 3
         02. Vector to the goal (normalized linear distance) - 3
         03. Euclidian distance (ee to reach goal)- 1
-        04. Current Joint values - 5
+        04. Current Joint values - 8
+        05. Previous action - 5 or 3 (joint or ee)
+        06. Joint velocities - 8
 
-        total: (3x2) + 1 + 5 = 12
+        total: (3x2) + 1 + (5 or 3)  + (8x2) = 28 or 26
 
         Returns:
             An observation representing the current state of the environment.
@@ -337,18 +566,21 @@ class RX200ReacherEnv(reactorx200_robot_real.RX200RobotEnv):
         # --- 3. Euclidian distance
         euclidean_distance_ee_goal = scipy.spatial.distance.euclidean(self.ee_pos, current_goal)  # float
 
-        # --- 4. Get Current Joint values
-        self.joint_values = self.get_joint_angles()  # Get a list
+        # --- Get Current Joint values - only for the joints we are using
+        #  we need this for delta actions
+        # self.joint_values = self.current_joint_positions.copy()  # Get a float list
+        self.joint_values = self.get_joint_angles()  # Get a float list. For action as delta
         # we don't need to convert this to numpy array since we concat using numpy below
 
         # our observations
-        obs = np.concatenate((self.ee_pos, vec_ee_goal, euclidean_distance_ee_goal, self.joint_values), axis=None)
+        obs = np.concatenate((self.ee_pos, vec_ee_goal, euclidean_distance_ee_goal, self.joint_pos_all,
+                              self.prev_action, self.current_joint_velocities), axis=None)
 
         rospy.loginfo(f"Observations --->: {obs}")
 
         return obs.copy()
 
-    def _get_reward(self):
+    def calculate_reward(self):
         """
         Function to get a reward from the environment.
 
@@ -358,7 +590,7 @@ class RX200ReacherEnv(reactorx200_robot_real.RX200RobotEnv):
             if reached: self.reached_goal_reward (positive reward)
             else: - self.mult_dist_reward * distance_to_the_goal
 
-            and as always negative rewards for each step, non execution and actions not within joint limits
+            and as always negative rewards for each step, non-execution and actions not within joint limits
 
         Returns:
             A scalar reward value representing how well the agent is doing in the current episode.
@@ -372,10 +604,10 @@ class RX200ReacherEnv(reactorx200_robot_real.RX200RobotEnv):
         # if it's "Sparse" reward structure
         if self.reward_arc == "Sparse":
 
-            # initialize the sparse reward as negative
+            # initialise the sparse reward as negative
             reward = -1
 
-            # marker only turns green if reach is done. Otherwise, it is red.
+            # The marker only turns green if reach is done. Otherwise, it is red.
             self.goal_marker.set_color(r=1.0, g=0.0)
             self.goal_marker.set_duration(duration=5)
 
@@ -422,13 +654,8 @@ class RX200ReacherEnv(reactorx200_robot_real.RX200RobotEnv):
             # publish the goal marker
             self.goal_marker.publish()
 
-            # - Check if joints are in limits
-            joint_angles = np.array(self.joint_values)
-            min_joint_values = np.array(self.min_joint_values)
-            max_joint_values = np.array(self.max_joint_values)
-            in_limits = np.any(joint_angles <= (min_joint_values + 0.0001)) or np.any(
-                joint_angles >= (max_joint_values - 0.0001))
-            reward += in_limits * self.joint_limits_reward
+            # - Check if actions are in limits
+            reward += self.action_not_in_limits * self.joint_limits_reward
 
             # to punish for actions where we cannot execute
             if not self.movement_result:
@@ -439,11 +666,11 @@ class RX200ReacherEnv(reactorx200_robot_real.RX200RobotEnv):
 
         return reward
 
-    def _is_done(self):
+    def check_if_done(self, real_time=False):
         """
         Function to check if the episode is done.
 
-        Task is done if the EE is close enough to the goal
+        The Task is done if the EE is close enough to the goal
 
         Returns:
             A boolean value indicating whether the episode has ended
@@ -468,12 +695,14 @@ class RX200ReacherEnv(reactorx200_robot_real.RX200RobotEnv):
             done = True
 
             # we can use this to log the success rate in stable baselines3
-            self.info['is_success'] = 1.0
+            if real_time:
+                self.info_r['is_success'] = 1.0
+                self.current_action = None  # we don't need to execute any more actions
+                self.init_done = False  # we don't need to execute the loop until we reset the env
+            else:
+                self.info['is_success'] = 1.0
 
         return done
-
-    # -------------------------------------------------------
-    #   Include any custom methods available for the MyTaskEnv class
 
     def check_if_reach_done(self, achieved_goal, desired_goal):
         """
@@ -524,10 +753,10 @@ class RX200ReacherEnv(reactorx200_robot_real.RX200RobotEnv):
         # Task Related parameters (we don't need these)
         if self.ee_action_type:
             self.n_actions = rospy.get_param('/rx200/n_actions_ee')
+            self.n_observations = rospy.get_param('/rx200/n_observations_ee')
         else:
             self.n_actions = rospy.get_param('/rx200/n_actions_joint')
-
-        self.n_observations = rospy.get_param('/rx200/n_observations')
+            self.n_observations = rospy.get_param('/rx200/n_observations_joint')
 
         # Action Space
         self.min_joint_values = rospy.get_param('/rx200/min_joint_pos')
@@ -541,6 +770,10 @@ class RX200ReacherEnv(reactorx200_robot_real.RX200RobotEnv):
         self.linear_distance_max = rospy.get_param('/rx200/linear_distance_max')
         self.linear_distance_min = rospy.get_param('/rx200/linear_distance_min')
         self.max_distance = rospy.get_param('/rx200/max_distance')
+        self.min_joint_vel = rospy.get_param('/rx200/min_joint_vel')
+        self.max_joint_vel = rospy.get_param('/rx200/max_joint_vel')
+        self.min_joint_angles = rospy.get_param('/rx200/min_joint_angles')
+        self.max_joint_angles = rospy.get_param('/rx200/max_joint_angles')
 
         # Goal space
         self.position_goal_max = rospy.get_param('/rx200/position_goal_max')
