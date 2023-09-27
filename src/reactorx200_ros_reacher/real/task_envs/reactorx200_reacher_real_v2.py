@@ -56,7 +56,7 @@ class RX200ReacherEnv(reactorx200_robot_real_v1.RX200RobotEnv):
 
     def __init__(self, new_roscore: bool = False, roscore_port: str = None, seed: int = None,
                  close_env_prompt: bool = True, reward_type: str = "Dense",
-                 delta_action: bool = True, delta_coeff: float = 0.05, real_time: bool = False,
+                 delta_action: bool = True, delta_coeff: float = 0.05, real_time: bool = True,
                  environment_loop_rate: float = None, action_cycle_time: float = 0.0):
 
         """
