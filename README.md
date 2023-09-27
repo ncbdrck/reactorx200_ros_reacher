@@ -101,7 +101,7 @@ Follow these steps to install this package:
    
 ## Usage
 
-### Available Environments
+### 1. Available Environments
 
 **Simulation based on Gazebo:**
 - **Default Envs:**
@@ -169,14 +169,141 @@ The env parameters are explained in the following table:
 |-----------------------|-------------------------------------------------------|----|----|
 | ee_action_type (bool) | Whether to use end-effector actions or joint actions. | ✔️ | ❌  |
 
-### Training in the real world or simulation
+
+**Observation Space:**
+
+| Observation                    | Description                                                | Elements             |
+|--------------------------------|------------------------------------------------------------|----------------------|
+| End effector position          | Position of the end effector in the world frame            | 3                    |
+| Vector to the goal             | normalized linear distance between the EE pos and the Goal | 3                    |
+| Euclidian distance to the goal | Euclidian distance between the EE pos and the Goal         | 1                    |
+| Current joint angles           | Current joint angles of the robot                          | 8                    |
+| Previous action                | Previous action taken by the agent                         | 5 or 3 (joint or ee) |
+| Joint velocities               | Current joint velocities of the robot                      | 8                    |
+
+
+**Action Space:**
+
+| Action          | Description                                 | v1 | v2 | Elements |
+|-----------------|---------------------------------------------|----|----|----------|
+| EE Position     | 3D end-effector position in the world frame | ✔️ | ❌  | 3        |
+| Joints position | 3D joint angles of the robot                | ✔️ | ✔️ | 5        |
+
+### 2. Training in the real world or simulation
  
 - The first step is to check the **train_sim.py** or **train_real.py** files in the scripts folder
 and modify the parameters accordingly.
 - The RL model parameters are found in the **config** folder inside the project repo.
 - The configuration of the task is also found in the **config** folder inside the project repo. (**reach_task_config_v1.yaml**)
 
+**Simulation**:
+```shell
+rosrun reactorx200_ros_reacher train_sim.py
+```
 
+**Real-World**:
+```shell
+rosrun reactorx200_ros_reacher train_real.py
+```
+
+or if you prefer to use your own RL algorithm, you can get started by using the following structure:
+
+```python
+#!/bin/python3
+import rospy
+import gym
+
+import reactorx200_ros_reacher
+from multiros.core import multiros_gym
+
+# wrappers
+from multiros.wrappers.normalize_action_wrapper import NormalizeActionWrapper
+from multiros.wrappers.normalize_obs_wrapper import NormalizeObservationWrapper
+from multiros.wrappers.time_limit_wrapper import TimeLimitWrapper
+
+if __name__ == '__main__':
+    
+    env = gym.make('RX200ReacherEnvSim-v2', gazebo_gui=False, delta_action=True, real_time=True, reward_type="dense",
+                   environment_loop_rate=50.0, action_cycle_time=0.2, seed=0)
+    
+    # # or 
+    # env = multiros_gym.make('RX200ReacherEnvSim-v2', gazebo_gui=False, delta_action=True, real_time=True, reward_type="dense",
+    #                environment_loop_rate=50.0, action_cycle_time=0.2, seed=0)
+    
+    env = NormalizeActionWrapper(env)
+    env = NormalizeObservationWrapper(env)
+    env = TimeLimitWrapper(env, max_steps=100)
+    
+    # your RL algorithm
+    # ...
+    
+    env.close()
+```
+
+### 3. Evaluating the trained model
+
+- The first step is to check the **validate_sim.py** or **evalidate_real.py** files in the scripts folder
+- The RL model parameters are found in the **config** folder inside the project repo.
+
+**Simulation**:
+```shell
+rosrun reactorx200_ros_reacher validate_sim.py
+```
+
+**Real-World**:
+```shell
+rosrun reactorx200_ros_reacher validate_real.py
+```
+
+or if you prefer to use your own RL algorithm, you can get started by using the following structure:
+
+```python
+#!/bin/python3
+import rospy
+import gym
+import sys
+
+import reactorx200_ros_reacher
+from multiros.core import multiros_gym
+
+# wrappers
+from multiros.wrappers.normalize_action_wrapper import NormalizeActionWrapper
+from multiros.wrappers.normalize_obs_wrapper import NormalizeObservationWrapper
+from multiros.wrappers.time_limit_wrapper import TimeLimitWrapper
+
+
+if __name__ == '__main__':
+    
+    env = gym.make('RX200ReacherEnvSim-v2', gazebo_gui=False, delta_action=True, real_time=True, reward_type="dense",
+                   environment_loop_rate=50.0, action_cycle_time=0.2, seed=0)
+    
+    # # or 
+    # env = multiros_gym.make('RX200ReacherEnvSim-v2', gazebo_gui=False, delta_action=True, real_time=True, reward_type="dense",
+    #                environment_loop_rate=50.0, action_cycle_time=0.2, seed=0)
+    
+    env = NormalizeActionWrapper(env)
+    env = NormalizeObservationWrapper(env)
+    env = TimeLimitWrapper(env, max_steps=100)
+    
+    # load your trained model
+    # ...
+    
+    # evaluate the model
+    obs = env.reset()
+    episodes = 1000
+    epi_count = 0
+    while epi_count < episodes:
+        action, _states = model.predict(observation=obs)
+        obs, _, dones, info = env.step(action)
+        if dones:
+            epi_count += 1
+            rospy.logwarn("Episode: " + str(epi_count))
+            obs = env.reset()
+
+    env.close()
+    sys.exit()
+
+```
 
 
 ## Issues
