@@ -18,20 +18,15 @@ from ros_rl.utils import ros_markers
 
 # Register your environment using the OpenAI register method to utilize gym.make("MyTaskGoalEnv-v0").
 register(
-    id='RX200ReacherGoalEnvReal-v1',
-    entry_point='reactorx200_ros_reacher.real.task_envs.reactorx200_reacher_goal_real_v1:RX200ReacherGoalEnv',
+    id='RX200ReacherGoalEnvReal-v2',
+    entry_point='reactorx200_ros_reacher.real.task_envs.reactorx200_reacher_goal_real_v2:RX200ReacherGoalEnv',
     max_episode_steps=1000,
 )
 
 """
-This is the v1 of the RX200 Reacher Task Environment. Following are the new features of this environment:
-    * Mainly with Moveit
-    * Added support for Real time RL environment
-    * We have new parameters for the environment - real_time, environment_loop_rate, action_cycle_time
-    * Changed the observation - now we have the velocity of each joint as well as previous actions as part of the obs
-    * We have a new method called environment_loop() for real time RL environments. This method is called by a timer so that we can run the environment at a given rate.
-    * We also modified the methods _set_action(), _get_observation(), _get_reward() and _is_done() to support real time
-    * changed the task config file to yaml
+This is the v2 of the RX200 Reacher Task Environment. Following are the new features of this environment:
+    * We are using ros_controllers to control the robot. Low level control is done using ros_controllers
+    * No EE action space - we are using joint action space
 """
 
 
@@ -43,8 +38,8 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_real_v1.RX200RobotGoalEnv):
         * The robot reached the goal
 
     Here
-        * Action Space - Continuous (5 actions or 3 actions) - Joint positions or x,y,z position of the EE
-        * Observation - Continuous (28 obs or 26 obs) - EE pos, Vector to the goal, Euclidian distance, Joint values, Previous action, Joint velocities
+        * Action Space - Continuous (5 actions ) - Joint positions (5 joints)
+        * Observation - Continuous (28 obs) - EE pos, Vector to the goal, Euclidian distance, Joint values, Previous action, Joint velocities
         * Desired Goal - Goal we are trying to reach
         * Achieved Goal - Position of the EE
 
@@ -54,7 +49,6 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_real_v1.RX200RobotGoalEnv):
         * seed: Seed for the random number generator.
         * close_env_prompt: Whether to prompt the user to close the env or not.
         * reward_type: Type of reward to be used. Can be "Sparse" or "Dense".
-        * ee_action_type: Whether to use the end-effector action space or the joint action space.
         * delta_action: Whether to use the delta actions or the absolute actions.
         * delta_coeff: Coefficient to be used for the delta actions.
         * real_time: Whether to use real time or not. (Asynchronous instead of sequential)
@@ -63,7 +57,7 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_real_v1.RX200RobotGoalEnv):
     """
 
     def __init__(self, new_roscore: bool = False, roscore_port: str = None, seed: int = None,
-                 close_env_prompt: bool = True, reward_type: str = "sparse", ee_action_type: bool = False,
+                 close_env_prompt: bool = True, reward_type: str = "sparse",
                  delta_action: bool = True, delta_coeff: float = 0.05, real_time: bool = False,
                  environment_loop_rate: float = None, action_cycle_time: float = 0.0):
 
@@ -125,13 +119,6 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_real_v1.RX200RobotGoalEnv):
             self.reward_arc = "Dense"
 
         """
-        Action type
-            * Joints - Default
-            * EE - End Effector
-        """
-        self.ee_action_type = ee_action_type
-
-        """
         Use action as deltas
         """
         self.delta_action = delta_action
@@ -159,24 +146,11 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_real_v1.RX200RobotGoalEnv):
         """
         Define the action space.
         """
-
-        if self.ee_action_type:
-            # EE action space
-
-            self.max_ee_values = np.array([self.position_ee_max["x"], self.position_ee_max["y"],
-                                           self.position_ee_max["z"]])
-            self.min_ee_values = np.array([self.position_ee_min["x"], self.position_ee_min["y"],
-                                           self.position_ee_min["z"]])
-
-            self.action_space = spaces.Box(low=np.array(self.min_ee_values), high=np.array(self.max_ee_values),
-                                           dtype=np.float32)
-
-        else:
-            # Joint action space
-            # ROS and Gazebo often use double-precision (64-bit)
-            # but we are using single-precision (32-bit) for our action space because we are using stable baselines3
-            self.action_space = spaces.Box(low=np.array(self.min_joint_values), high=np.array(self.max_joint_values),
-                                           dtype=np.float32)
+        # Joint action space
+        # ROS and Gazebo often use double-precision (64-bit)
+        # but we are using single-precision (32-bit) for our action space because we are using stable baselines3
+        self.action_space = spaces.Box(low=np.array(self.min_joint_values), high=np.array(self.max_joint_values),
+                                       dtype=np.float32)
 
         """
         Define the observation space.
@@ -186,11 +160,11 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_real_v1.RX200RobotGoalEnv):
         02. Vector to the goal (normalized linear distance) - 3
         03. Euclidian distance (ee to reach goal)- 1
         04. Current Joint values - 8
-        05. Previous action - 5 or 3 (joint or ee)
+        05. Previous action - 5 
         06. Joint velocities - 8
 
         So observation space is a dictionary with 
-            observation: (3x2) + 1 + 5 (or 3) + (8x2) = 28 or 26 elements
+            observation: (3x2) + 1 + 5  + (8x2) = 28 
             achieved_goal: EE pos - 3 elements
             desired_goal: Goal pos - 3 elements
         """
@@ -214,12 +188,8 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_real_v1.RX200RobotGoalEnv):
         observations_low_joint_values = self.min_joint_angles.copy()
 
         # ---- previous action
-        if self.ee_action_type:
-            observations_high_prev_action = self.max_ee_values.copy()
-            observations_low_prev_action = self.min_ee_values.copy()
-        else:
-            observations_high_prev_action = self.max_joint_values.copy()
-            observations_low_prev_action = self.min_joint_values.copy()
+        observations_high_prev_action = self.max_joint_values.copy()
+        observations_low_prev_action = self.min_joint_values.copy()
 
         # ---- joint velocities
         observations_high_joint_vel = self.max_joint_vel.copy()
@@ -291,6 +261,9 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_real_v1.RX200RobotGoalEnv):
         """
         super().__init__(ros_port=ros_port, seed=seed, close_env_prompt=close_env_prompt, async_moveit=async_moveit,
                          action_cycle_time=action_cycle_time)
+
+        # we can use this to set a time for ros_controllers to complete the action
+        self.environment_loop_time = 1.0 / environment_loop_rate  # in seconds
 
         # set the initial parameters for real time envs
         if environment_loop_rate is not None and self.real_time:
@@ -539,58 +512,29 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_real_v1.RX200RobotGoalEnv):
         """
         rospy.loginfo(f"Action --->: {action}")
 
-        # --- Set the action based on the action type
-        # --- EE action
-        if self.ee_action_type:
+        # --- Make actions as deltas
+        if self.delta_action:
+            action = self.joint_values + (action * self.delta_coeff)
 
-            # --- Make actions as deltas
-            if self.delta_action:
-                action = self.ee_pos + (action * self.delta_coeff)
+        # check if the action is within the joint limits
+        min_joint_values = np.array(self.min_joint_values)
+        max_joint_values = np.array(self.max_joint_values)
+        self.action_not_in_limits = np.any(action <= (min_joint_values + 0.0001)) or np.any(
+            action >= (max_joint_values - 0.0001))
 
-            # check if the action is within the joint limits
-            min_ee_values = np.array(self.min_ee_values)
-            max_ee_values = np.array(self.max_ee_values)
-            self.action_not_in_limits = np.any(action <= (min_ee_values + 0.0001)) or np.any(
-                action >= (max_ee_values - 0.0001))
+        # clip the action
+        action = np.clip(action, self.min_joint_values, self.max_joint_values)
 
-            # clip the action
-            action = np.clip(action, self.min_ee_values, self.max_ee_values)
+        # check if we can reach the goal
+        if self.check_goal_reachable_joint_pos(action):
+            # execute the trajectory - ros_controllers
+            self.move_joints(q_positions=action, time_from_start=self.environment_loop_time)
+            self.movement_result = True
 
-            # check if we can reach the goal
-            if self.check_goal(action):
-                # execute the trajectory - ros_controllers
-                self.movement_result = self.set_trajectory_ee(action)
-
-            else:
-                rospy.logwarn(f"The ee pose {action} is not within the goal space!")
-                rospy.logwarn(f"Set action failed for --->: {action}")
-                self.movement_result = False
-
-        # --- Joint action
         else:
-
-            # --- Make actions as deltas
-            if self.delta_action:
-                action = self.joint_values + (action * self.delta_coeff)
-
-            # check if the action is within the joint limits
-            min_joint_values = np.array(self.min_joint_values)
-            max_joint_values = np.array(self.max_joint_values)
-            self.action_not_in_limits = np.any(action <= (min_joint_values + 0.0001)) or np.any(
-                action >= (max_joint_values - 0.0001))
-
-            # clip the action
-            action = np.clip(action, self.min_joint_values, self.max_joint_values)
-
-            # check if we can reach the goal
-            if self.check_goal_reachable_joint_pos(action):
-                # execute the trajectory
-                self.movement_result = self.set_trajectory_joints(action)
-
-            else:
-                rospy.logwarn(f"The ee pose {action} is not within the goal space!")
-                rospy.logwarn(f"Set action failed for --->: {action}")
-                self.movement_result = False
+            rospy.logwarn(f"The ee pose {action} is not within the goal space!")
+            rospy.logwarn(f"Set action failed for --->: {action}")
+            self.movement_result = False
 
     def sample_observation(self):
         """
@@ -601,10 +545,10 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_real_v1.RX200RobotGoalEnv):
         02. Vector to the goal (normalized linear distance) - 3
         03. Euclidian distance (ee to reach goal)- 1
         04. Current Joint values - 8
-        05. Previous action - 5 or 3 (joint or ee)
+        05. Previous action - 5
         06. Joint velocities - 8
 
-        total: (3x2) + 1 + (5 or 3)  + (8x2) = 28 or 26
+        total: (3x2) + 1 + 5 + (8x2) = 28
 
         Returns:
             An observation representing the current state of the environment.
@@ -813,12 +757,8 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_real_v1.RX200RobotGoalEnv):
         Function to get configuration parameters (optional)
         """
         # Task Related parameters (we don't need these)
-        if self.ee_action_type:
-            self.n_actions = rospy.get_param('/rx200/n_actions_ee')
-            self.n_observations = rospy.get_param('/rx200/n_observations_ee')
-        else:
-            self.n_actions = rospy.get_param('/rx200/n_actions_joint')
-            self.n_observations = rospy.get_param('/rx200/n_observations_joint')
+        self.n_actions = rospy.get_param('/rx200/n_actions_joint')
+        self.n_observations = rospy.get_param('/rx200/n_observations_joint')
 
         # Action Space
         self.min_joint_values = rospy.get_param('/rx200/min_joint_pos')
