@@ -283,32 +283,13 @@ class RX200ReacherEnv(reactorx200_robot_sim_v2.RX200RobotEnv):
         self.init_pos = np.array([0.0, 0.0, 0.0, 0.0, 0.0])
 
         # stop the robot and move to home
-        self.move_RX200_object.stop_arm()
-        self.move_joints(self.init_pos)
-
-        # for dense reward calculation
-        self.action_not_in_limits = False
+        # self.move_RX200_object.stop_arm()
+        # self.move_joints(self.init_pos)
 
         # make the current action None to stop execution for real time envs and also stop the env loop
         if self.real_time:
-            rospy.loginfo("Start resetting the env loop!")
-
             self.init_done = False  # we don't need to execute the loop until we reset the env
             self.current_action = None
-            self.prev_action = self.init_pos.copy()
-            # self.move_RX200_object.stop_arm()  # stop the arm if it is moving
-
-            # init the real time variables
-            self.obs_r = None
-            self.reward_r = None
-            self.done_r = None
-            self.info_r = {}
-
-            # debug
-            self.loop_counter = 0
-            self.action_counter = 0
-
-            rospy.loginfo("Done resetting the env loop!")
 
         # move the robot to the home pose
         # we need to wait for the movement to finish
@@ -340,8 +321,26 @@ class RX200ReacherEnv(reactorx200_robot_sim_v2.RX200RobotEnv):
         self.joint_values = self.get_joint_angles()
         # self.joint_values = self.current_joint_positions.copy()
 
+        # for dense reward calculation
+        self.action_not_in_limits = False
+
         # We can start the environment loop now
         if self.real_time:
+            rospy.loginfo("Start resetting the env loop!")
+            self.prev_action = self.init_pos.copy()
+
+            # init the real time variables
+            self.obs_r = None
+            self.reward_r = None
+            self.done_r = None
+            self.info_r = {}
+
+            # debug
+            self.loop_counter = 0
+            self.action_counter = 0
+
+            rospy.loginfo("Done resetting the env loop!")
+
             self.init_done = True
 
         rospy.loginfo("Initialising init params done--->")
