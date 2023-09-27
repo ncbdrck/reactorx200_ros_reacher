@@ -64,7 +64,7 @@ class RX200ReacherEnv(reactorx200_robot_sim_v2.RX200RobotEnv):
     def __init__(self, launch_gazebo: bool = True, new_roscore: bool = True, roscore_port: str = None,
                  gazebo_paused: bool = False, gazebo_gui: bool = False, seed: int = None, reward_type: str = "Dense",
                  delta_action: bool = True, delta_coeff: float = 0.05,
-                 real_time: bool = False, environment_loop_rate: float = None, action_cycle_time: float = 0.0):
+                 real_time: bool = True, environment_loop_rate: float = None, action_cycle_time: float = 0.0):
 
         """
         variables to keep track of ros, gazebo ports and gazebo pid
