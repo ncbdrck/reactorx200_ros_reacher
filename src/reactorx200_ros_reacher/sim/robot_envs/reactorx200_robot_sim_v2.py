@@ -47,7 +47,7 @@ class RX200RobotEnv(GazeboBaseEnv.GazeboBaseEnv):
     """
     Superclass for all RX200 Robot environments.
 
-    This the v2 of the robot environment. Following are the changes from the v1:
+    This is the v2 of the robot environment. Following are the changes from the v1:
         * Use moveit check if the goal is reachable - joint positions
         * Get joint states for velocity and position
         * use ros_controllers to control the robot - more low-level control
@@ -236,15 +236,6 @@ class RX200RobotEnv(GazeboBaseEnv.GazeboBaseEnv):
         initialise controller and sensor objects here
         """
 
-        # self.joint_names = ["elbow",
-        #                     # "gripper",
-        #                     # "left_finger",
-        #                     # "right_finger",
-        #                     "shoulder",
-        #                     "waist",
-        #                     "wrist_angle",
-        #                     "wrist_rotate"]
-
         self.joint_names = ["waist",
                             "shoulder",
                             "elbow",
@@ -269,12 +260,7 @@ class RX200RobotEnv(GazeboBaseEnv.GazeboBaseEnv):
                                                                JointTrajectory,
                                                                queue_size=10)
 
-        # for kinematics
-        # robot_description = rospy.get_param(namespace + "/robot_description")
-        # self.robot_urdf = URDF.from_parameter_server(namespace + "/robot_description")
-        # self.robot_urdf = URDF.from_xml_string(robot_description)
-        # Define the end-effector link (replace 'end_effector_link' with your actual link name)
-        # end_effector_link = "rx200/ee_gripper_link"
+
 
         """
         Finished __init__ method
@@ -310,28 +296,28 @@ class RX200RobotEnv(GazeboBaseEnv.GazeboBaseEnv):
 
         # joint names - not using this
         self.joint_state_names = list(joint_state.name)
-        # print("joint_state_names: ", self.joint_state_names)
 
         # get the current joint positions - using this
         joint_pos_all = list(joint_state.position)
         self.joint_pos_all = joint_pos_all
 
-        # create an array of joint positions of what we want - not using this
-        self.current_joint_positions = [joint_pos_all[0], joint_pos_all[4], joint_pos_all[5], joint_pos_all[6],
-                                        joint_pos_all[7]]
-
         # get the current joint velocities - we are using this
         self.current_joint_velocities = list(joint_state.velocity)
-        # print("current_joint_velocities: ", self.current_joint_velocities)
-        # print("type(current_joint_velocities): ", type(self.current_joint_velocities))
 
         # get the current joint efforts - not using this
         self.current_joint_efforts = list(joint_state.effort)
 
 
-    def move_joints(self, q_positions: np.ndarray) -> bool:
+    def move_joints(self, q_positions: np.ndarray, time_from_start: float = 0.5) -> bool:
         """
         Set a joint position target only for the arm joints using low-level ros controllers.
+
+        Args:
+            q_positions: joint positions of the robot arm
+            time_from_start: time from start of the trajectory (set the speed to complete the trajectory within this time)
+
+        Returns:
+            True if the action is successful
         """
 
         # create a JointTrajectory object
@@ -341,7 +327,7 @@ class RX200RobotEnv(GazeboBaseEnv.GazeboBaseEnv):
         trajectory.points[0].positions = q_positions
         trajectory.points[0].velocities = [0.0] * len(self.joint_names)
         trajectory.points[0].accelerations = [0.0] * len(self.joint_names)
-        trajectory.points[0].time_from_start = rospy.Duration(0.5)  # start immediately
+        trajectory.points[0].time_from_start = rospy.Duration(time_from_start)
 
         # send the trajectory to the controller
         self.joint_trajectory_controller_pub.publish(trajectory)

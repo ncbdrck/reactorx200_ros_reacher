@@ -42,7 +42,7 @@ class RX200RobotGoalEnv(GazeboGoalEnv.GazeboGoalEnv):
     """
     Superclass for all RX200 Robot Goal environments.
 
-    This the v1 of the robot environment. Following are the changes from the v0:
+    This is the v2 of the robot environment. Following are the changes from the v1:
         * Use moveit check if the goal is reachable - joint positions
         * Get joint states for velocity and position
         * use ros_controllers to control the robot - more low-level control
@@ -295,9 +295,16 @@ class RX200RobotGoalEnv(GazeboGoalEnv.GazeboGoalEnv):
         # get the current joint efforts - not using this
         self.current_joint_efforts = list(joint_state.effort)
 
-    def move_joints(self, q_positions: np.ndarray) -> bool:
+    def move_joints(self, q_positions: np.ndarray, time_from_start: float = 0.5) -> bool:
         """
         Set a joint position target only for the arm joints using low-level ros controllers.
+
+        Args:
+            q_positions: joint positions of the robot arm
+            time_from_start: time from start of the trajectory (set the speed to complete the trajectory within this time)
+
+        Returns:
+            True if the action is successful
         """
 
         # create a JointTrajectory object
@@ -307,7 +314,7 @@ class RX200RobotGoalEnv(GazeboGoalEnv.GazeboGoalEnv):
         trajectory.points[0].positions = q_positions
         trajectory.points[0].velocities = [0.0] * len(self.joint_names)
         trajectory.points[0].accelerations = [0.0] * len(self.joint_names)
-        trajectory.points[0].time_from_start = rospy.Duration(0.5)  # start immediately
+        trajectory.points[0].time_from_start = rospy.Duration(time_from_start)
 
         # send the trajectory to the controller
         self.joint_trajectory_controller_pub.publish(trajectory)
