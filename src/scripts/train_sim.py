@@ -17,6 +17,7 @@ import reactorx200_ros_reacher
 # or
 # from reactorx200_ros_reacher.sim.task_envs import reactorx200_reacher_sim, reactorx200_reacher_goal_sim
 # from reactorx200_ros_reacher.sim.task_envs import reactorx200_reacher_sim_v1, reactorx200_reacher_goal_sim_v1
+# from reactorx200_ros_reacher.sim.task_envs import reactorx200_reacher_sim_v2, reactorx200_reacher_goal_sim_v2
 
 # Models
 from sb3_ros_support.sac import SAC
@@ -47,7 +48,7 @@ if __name__ == '__main__':
     #                delta_action=True, reward_type="sparse", real_time=True, environment_loop_rate=100.0,
     #                action_cycle_time=0.1)
 
-    # env = gym.make('RX200ReacherGoalEnvSim-v2', gazebo_gui=True, delta_action=True,
+    # env = gym.make('RX200ReacherGoalEnvSim-v2', gazebo_gui=False, delta_action=True,
     #                reward_type="sparse", real_time=True, environment_loop_rate=50.0, action_cycle_time=0.2, seed=0)
 
 
