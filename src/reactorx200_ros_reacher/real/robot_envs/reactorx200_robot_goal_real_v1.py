@@ -8,6 +8,7 @@ from gym.envs.registration import register
 import numpy as np
 from sensor_msgs.msg import JointState
 from geometry_msgs.msg import Pose
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 # core modules of the framework
 from ros_rl.utils.moveit_ros_rl import MoveitROS_RL
@@ -22,8 +23,8 @@ Although it is best to register only the task environment, one can also register
 This is not necessary, but we can see if this section works by calling "gym.make" this env.
 """
 register(
-    id='RX200RobotGoalEnv-v0',
-    entry_point='reactorx200_ros_reacher.real.robot_envs.reactorx200_robot_goal_real:RX200RobotGoalEnv',
+    id='RX200RobotGoalEnv-v1',
+    entry_point='reactorx200_ros_reacher.real.robot_envs.reactorx200_robot_goal_real_v1:RX200RobotGoalEnv',
     max_episode_steps=100,
 )
 
@@ -32,19 +33,27 @@ class RX200RobotGoalEnv(RealGoalEnv.RealGoalEnv):
     """
     RX200 Robot Goal Env, use this class to describe the robots and the sensors in the Environment.
     Superclass for all Robot Goal environments.
+
+    This is the v1 of the robot environment. Following are the changes from the v0:
+        * Use moveit check if the goal is reachable - joint positions
+        * Get joint states for velocity and position
+        * use ros_controllers to control the robot - more low-level control
     """
 
-    def __init__(self, ros_port: str = None, seed: int = None, close_env_prompt: bool = False):
+    def __init__(self, ros_port: str = None, seed: int = None, close_env_prompt: bool = False, action_cycle_time=0.0,
+                 async_moveit=False):
         """
         Initializes a new Robot Goal Environment
 
         Describe the robot and the sensors used in the env.
 
         Sensor Topic List:
-            /joint_states : JointState received for the joints of the robot
+            MoveIt: To get the pose and rpy of the robot.
+            /joint_states: JointState received for the joints of the robot
 
         Actuators Topic List:
-            MoveIt! : MoveIt! action server is used to send the joint positions to the robot.
+            MoveIt!: Send the joint positions to the robot.
+            ROS Controllers: ROS Controllers are used to send the joint positions to the robot.
         """
         rospy.loginfo("Start Init RX200RobotGoalEnv ROS_RL")
 
@@ -53,6 +62,11 @@ class RX200RobotGoalEnv(RealGoalEnv.RealGoalEnv):
         """
         if ros_port is not None:
             ros_common.change_ros_master(ros_port=ros_port)
+
+        """
+        parameters
+        """
+        self.async_moveit = async_moveit
 
         """
         Launch a roslaunch file that will setup the connection with the real robot 
@@ -85,7 +99,7 @@ class RX200RobotGoalEnv(RealGoalEnv.RealGoalEnv):
         super().__init__(
             load_robot=load_robot, robot_pkg_name=robot_pkg_name, robot_launch_file=robot_launch_file,
             robot_args=robot_args, namespace=namespace, kill_rosmaster=kill_rosmaster, clean_logs=clean_logs,
-            ros_port=ros_port, seed=seed, close_env_prompt=close_env_prompt)
+            ros_port=ros_port, seed=seed, close_env_prompt=close_env_prompt, action_cycle_time=action_cycle_time)
 
         """
         Using the _check_connection_and_readiness method to check for the connection status of subscribers, publishers 
@@ -96,12 +110,33 @@ class RX200RobotGoalEnv(RealGoalEnv.RealGoalEnv):
         """
         initialise controller and sensor objects here
         """
+        # ---------- joint state
+        if namespace is not None and namespace != '/':
+            self.joint_state_topic = namespace + "/joint_states"
+        else:
+            self.joint_state_topic = "/joint_states"
+
+        self.joint_state_sub = rospy.Subscriber(self.joint_state_topic, JointState, self.joint_state_callback)
+        self.joint_state = JointState()
 
         #  Moveit object
         self.move_RX200_object = MoveitROS_RL(arm_name='interbotix_arm',
                                               gripper_name='interbotix_gripper',
                                               robot_description="rx200/robot_description",
                                               ns="rx200")
+
+        # For ROS Controllers
+        self.joint_names = ["waist",
+                            "shoulder",
+                            "elbow",
+                            "wrist_angle",
+                            "wrist_rotate"]
+
+        # low-level control
+        # The rostopic for joint trajectory controller
+        self.joint_trajectory_controller_pub = rospy.Publisher('/rx200/arm_controller/command',
+                                                               JointTrajectory,
+                                                               queue_size=10)
 
         """
         Finished __init__ method
@@ -113,25 +148,80 @@ class RX200RobotGoalEnv(RealGoalEnv.RealGoalEnv):
 
     """
     Define the custom methods for the environment
+        * move_joints: Set a joint position target only for the arm joints using low-level ros controllers.
+        * joint_state_callback: Get the joint state of the robot
         * set_trajectory_joints: Set a joint position target only for the arm joints.
         * set_trajectory_ee: Set a pose target for the end effector of the robot arm.
         * get_ee_pose: Get end-effector pose a geometry_msgs/PoseStamped message
         * get_ee_rpy: Get end-effector orientation as a list of roll, pitch, and yaw angles.
         * get_joint_angles: Get current joint angles of the robot arm - 5 elements
         * check_goal: Check if the goal is reachable
+        * check_goal_reachable_joint_pos: Check if the goal is reachable with joint positions
     """
+
+    def joint_state_callback(self, joint_state):
+        """
+        Function to get the joint state of the robot.
+        """
+
+        self.joint_state = joint_state
+
+        # joint names - not using this
+        self.joint_state_names = list(joint_state.name)
+
+        # get the current joint positions - using this
+        joint_pos_all = list(joint_state.position)
+        self.joint_pos_all = joint_pos_all
+
+        # get the current joint velocities - we are using this
+        self.current_joint_velocities = list(joint_state.velocity)
+
+        # get the current joint efforts - not using this
+        self.current_joint_efforts = list(joint_state.effort)
+
+    def move_joints(self, q_positions: np.ndarray, time_from_start: float = 0.5) -> bool:
+        """
+        Set a joint position target only for the arm joints using low-level ros controllers.
+
+        Args:
+            q_positions: joint positions
+            time_from_start: time from start for the trajectory (set the speed to complete the trajectory within this time)
+
+        Returns:
+            True if the trajectory is set
+        """
+
+        # create a JointTrajectory object
+        trajectory = JointTrajectory()
+        trajectory.joint_names = self.joint_names
+        trajectory.points.append(JointTrajectoryPoint())
+        trajectory.points[0].positions = q_positions
+        trajectory.points[0].velocities = [0.0] * len(self.joint_names)
+        trajectory.points[0].accelerations = [0.0] * len(self.joint_names)
+        trajectory.points[0].time_from_start = rospy.Duration(time_from_start)
+
+        # send the trajectory to the controller
+        self.joint_trajectory_controller_pub.publish(trajectory)
+
+        return True
 
     def set_trajectory_joints(self, q_positions: np.ndarray) -> bool:
         """
         Set a joint position target only for the arm joints.
         """
-        return self.move_RX200_object.set_trajectory_joints(q_positions)
+        if self.async_moveit:
+            return self.move_RX200_object.set_trajectory_joints(q_positions, async_move=True)
+        else:
+            return self.move_RX200_object.set_trajectory_joints(q_positions)
 
     def set_trajectory_ee(self, pos: np.ndarray) -> bool:
         """
         Set a pose target for the end effector of the robot arm.
         """
-        return self.move_RX200_object.set_trajectory_ee(position=pos)
+        if self.async_moveit:
+            return self.move_RX200_object.set_trajectory_ee(position=pos, async_move=True)
+        else:
+            return self.move_RX200_object.set_trajectory_ee(position=pos)
 
     def get_ee_pose(self):
         """
@@ -161,6 +251,22 @@ class RX200RobotGoalEnv(RealGoalEnv.RealGoalEnv):
         """
         return self.move_RX200_object.check_goal(goal)
 
+    def check_goal_reachable_joint_pos(self, joint_pos):
+        """
+        Check if the goal is reachable with joint positions
+        """
+        return self.move_RX200_object.check_goal_joint_pos(joint_pos)
+
+    # helper fn for _check_connection_and_readiness
+    def _check_joint_states_ready(self):
+        """
+        Function to check if the joint states are received
+        """
+        # Wait for the service to be available
+        rospy.logdebug(rostopic.get_topic_type(self.joint_state_topic, blocking=True))
+
+        return True
+
     def _check_moveit_ready(self):
         """
         Function to check if moveit services are running
@@ -168,6 +274,16 @@ class RX200RobotGoalEnv(RealGoalEnv.RealGoalEnv):
         rospy.wait_for_service("/rx200/move_group/trajectory_execution/set_parameters")
         rospy.logdebug(rostopic.get_topic_type("/rx200/planning_scene", blocking=True))
         rospy.logdebug(rostopic.get_topic_type("/rx200/move_group/status", blocking=True))
+
+        return True
+
+    # helper fn for _check_connection_and_readiness
+    def _check_ros_controllers_ready(self):
+        """
+        Function to check if ros controllers are running
+        """
+        rospy.logdebug(rostopic.get_topic_type("/rx200/arm_controller/state", blocking=True))
+        rospy.logdebug(rostopic.get_topic_type("/rx200/gripper_controller/state", blocking=True))
 
         return True
 
@@ -180,6 +296,8 @@ class RX200RobotGoalEnv(RealGoalEnv.RealGoalEnv):
         all systems.
         """
         self._check_moveit_ready()
+        self._check_joint_states_ready()
+        self._check_ros_controllers_ready()
 
         rospy.loginfo("All system are ready!")
 
