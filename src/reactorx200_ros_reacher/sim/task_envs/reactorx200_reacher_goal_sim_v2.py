@@ -31,7 +31,6 @@ This is the v2 of the RX200 Reacher Task Environment. Following are the new feat
     * Changed the observation - now we have the velocity of each joint as well as previous actions as part of the obs
     * We are using ros_controllers to control the robot. Low level control is done using ros_controllers
     * changed the task config file to yaml
-    * No EE action space - we are using joint action space
 """
 
 
@@ -65,7 +64,7 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim_v2.RX200RobotGoalEnv):
 
     def __init__(self, launch_gazebo: bool = True, new_roscore: bool = True, roscore_port: str = None,
                  gazebo_paused: bool = False, gazebo_gui: bool = False, seed: int = None, reward_type: str = "sparse",
-                 delta_action: bool = True, delta_coeff: float = 0.05,
+                 delta_action: bool = False, delta_coeff: float = 0.05,
                  real_time: bool = False, environment_loop_rate: float = None, action_cycle_time: float = 0.0):
 
         """
@@ -78,10 +77,10 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim_v2.RX200RobotGoalEnv):
         """
         Initialise the env
 
-        It is recommended to launch Gazebo with a new roscore at this point for the following reasons:, 
-            1.  This allows running a new rosmaster to enable vectorisation of the environment and the execution of 
+        It is recommended to launch Gazebo with a new roscore at this point for the following reasons:,
+            1.  This allows running a new rosmaster to enable vectorisation of the environment and the execution of
                 multiple environments concurrently.
-            2.  The environment can keep track of the process ID of Gazebo to automatically close it when env.close() 
+            2.  The environment can keep track of the process ID of Gazebo to automatically close it when env.close()
                 is called.
 
         """
@@ -172,12 +171,12 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim_v2.RX200RobotGoalEnv):
         # observation
         01. EE pos - 3
         02. Vector to the goal (normalized linear distance) - 3
-        03. Euclidian distance (ee to reach goal)- 1 
+        03. Euclidian distance (ee to reach goal)- 1
         04. Current Joint values - 8
         05. Previous action - 5
         06. Joint velocities - 8
 
-        So observation space is a dictionary with 
+        So observation space is a dictionary with
             observation: ([3*2]+1+5+[8*2]) 28 elements
             achieved_goal: EE pos - 3 elements
             desired_goal: Goal pos - 3 elements
@@ -219,7 +218,7 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim_v2.RX200RobotGoalEnv):
              observations_low_joint_values, observations_low_prev_action, observations_low_joint_vel, ])
 
         """
-        Achieved goal (EE pose) - 3 
+        Achieved goal (EE pose) - 3
         """
         high_achieved_goal_pos_range = np.array(
             np.array([self.position_achieved_goal_max["x"], self.position_achieved_goal_max["y"],
@@ -232,7 +231,7 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim_v2.RX200RobotGoalEnv):
                                               dtype=np.float32)
 
         """
-        Desired goal (Goal pose) - 3 
+        Desired goal (Goal pose) - 3
         """
         high_desired_goal_pos_range = np.array(
             np.array([self.position_desired_goal_max["x"], self.position_desired_goal_max["y"],
@@ -609,7 +608,7 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim_v2.RX200RobotGoalEnv):
         """
         Compute the reward for achieving a given goal.
 
-        Sparse Reward: float => 0.0 for success, -1.0 for failure
+        Sparse Reward: float => 1.0 for success, -1.0 for failure
 
         Dense Reward:
             if reached: self.reached_goal_reward (positive reward)
