@@ -2,8 +2,10 @@ rx200: #namespace
 
     # ******** Task Related parameters (we don't use these)
     n_actions: 5  # The number of available actions (default)
+    n_actions_joint: 5  # The number of available actions (joint positions)
+    n_actions_ee: 3  # The number of available actions (EE position)
     n_observations: 28  # The number of observations
-    max_steps: 100  # Maximum number of steps (not currently used)
+    max_steps: 1000  # Maximum number of steps (not currently used)
 
     # ******** Action Space
     # Define the minimum and maximum joint values
