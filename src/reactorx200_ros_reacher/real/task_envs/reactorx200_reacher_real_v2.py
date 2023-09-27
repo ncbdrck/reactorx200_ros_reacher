@@ -277,8 +277,8 @@ class RX200ReacherEnv(reactorx200_robot_real_v1.RX200RobotEnv):
 
         # stop the robot and move to the Home
         self.move_RX200_object.stop_arm()
-        result = self.move_RX200_object.set_trajectory_joints(self.init_pos)
-        if not result:
+        self.movement_result = self.move_RX200_object.set_trajectory_joints(self.init_pos)
+        if not self.movement_result:
             rospy.logwarn("Homing failed!")
 
         #  Get a random Reach goal - np.array
