@@ -54,7 +54,7 @@ register(
 register(
     id='RX200ReacherEnvReal-v0',
     entry_point='reactorx200_ros_reacher.real.task_envs.reactorx200_reacher_real:RX200ReacherEnv',
-    max_episode_steps=100,
+    max_episode_steps=1000,
 )
 
 # RX200 Reacher ROS_RL Goal Environment
@@ -62,5 +62,21 @@ register(
 register(
     id='RX200ReacherGoalEnvReal-v0',
     entry_point='reactorx200_ros_reacher.real.task_envs.reactorx200_reacher_goal_real:RX200ReacherGoalEnv',
-    max_episode_steps=100,
+    max_episode_steps=1000,
+)
+
+# RX200 Reacher ROS_RL Default Environment v1
+
+register(
+    id='RX200ReacherEnvReal-v1',
+    entry_point='reactorx200_ros_reacher.real.task_envs.reactorx200_reacher_real_v1:RX200ReacherEnv',
+    max_episode_steps=1000,
+)
+
+# RX200 Reacher ROS_RL Goal Environment v1
+
+register(
+    id='RX200ReacherGoalEnvReal-v1',
+    entry_point='reactorx200_ros_reacher.real.task_envs.reactorx200_reacher_goal_real_v1:RX200ReacherGoalEnv',
+    max_episode_steps=1000,
 )
