@@ -319,10 +319,6 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim_v2.RX200RobotGoalEnv):
         # Initial robot pose - Home
         self.init_pos = np.array([0.0, 0.0, 0.0, 0.0, 0.0])
 
-        # stop the robot and move to home
-        self.move_RX200_object.stop_arm()
-        # self.move_joints(self.init_pos)
-
         # make the current action None to stop execution for real time envs and also stop the env loop
         if self.real_time:
             self.init_done = False  # we don't need to execute the loop until we reset the env
@@ -331,6 +327,7 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_sim_v2.RX200RobotGoalEnv):
         # move the robot to the home pose
         # we need to wait for the movement to finish
         # we define the movement result here so that we can use it in the environment loop (we need it for dense reward)
+        self.move_RX200_object.stop_arm()
         self.movement_result = self.move_RX200_object.set_trajectory_joints(self.init_pos)
         if not self.movement_result:
             rospy.logwarn("Homing failed!")
