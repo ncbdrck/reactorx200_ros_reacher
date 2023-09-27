@@ -4,7 +4,9 @@ rx200: #namespace
     n_actions: 5  # The number of available actions (default)
     n_actions_joint: 5  # The number of available actions (joint positions)
     n_actions_ee: 3  # The number of available actions (EE position)
-    n_observations: 28  # The number of observations
+    n_observations: 28  # The number of observations (default)
+    n_observations_joint: 28  # The number of observations (joint positions)
+    n_observations_ee: 26  # The number of observations (EE position)
     max_steps: 1000  # Maximum number of steps (not currently used)
 
     # ******** Action Space
