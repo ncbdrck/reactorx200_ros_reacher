@@ -105,15 +105,15 @@ Follow these steps to install this package:
 
 **Simulation based on Gazebo:**
 - **Default Envs:**
-   - RX200ReacherEnvSim-v0 (deprecated)
-   - RX200ReacherEnvSim-v1 (both sequential and asynchronous - MoveIt)
-   - RX200ReacherEnvSim-v2 (Only Asynchronous - ROS control)
+   - `RX200ReacherEnvSim-v0` (deprecated)
+   - `RX200ReacherEnvSim-v1` (both sequential and asynchronous - MoveIt)
+   - `RX200ReacherEnvSim-v2` (Only Asynchronous - ROS control)
 
 
 - **Goal-Conditioned Envs:**
-   - RX200ReacherGoalEnvSim-v0 (deprecated)
-   - RX200ReacherGoalEnvSim-v1 (both sequential and asynchronous — MoveIt)
-   - RX200ReacherGoalEnvSim-v2 (Only Asynchronous - ROS control)
+   - `RX200ReacherGoalEnvSim-v0` (deprecated)
+   - `RX200ReacherGoalEnvSim-v1` (both sequential and asynchronous — MoveIt)
+   - `RX200ReacherGoalEnvSim-v2` (Only Asynchronous - ROS control)
 
 The env parameters are explained in the following table:
 
@@ -138,15 +138,15 @@ The env parameters are explained in the following table:
 
 **Real-World:**
 - **Default Envs:**
-   - RX200ReacherEnvReal-v0 (deprecated)
-   - RX200ReacherEnvReal-v1 (both sequential and asynchronous - MoveIt)
-   - RX200ReacherEnvReal-v2 (Only Asynchronous - ROS control)
+   - `RX200ReacherEnvReal-v0` (deprecated)
+   - `RX200ReacherEnvReal-v1` (both sequential and asynchronous - MoveIt)
+   - `RX200ReacherEnvReal-v2` (Only Asynchronous - ROS control)
 
 
 - **Goal-Conditioned Envs:**
-   - RX200ReacherGoalEnvReal-v0 (deprecated)
-   - RX200ReacherGoalEnvReal-v1 (both sequential and asynchronous — MoveIt)
-   - RX200ReacherGoalEnvReal-v2 (Only Asynchronous - ROS control)
+   - `RX200ReacherGoalEnvReal-v0` (deprecated)
+   - `RX200ReacherGoalEnvReal-v1` (both sequential and asynchronous — MoveIt)
+   - `RX200ReacherGoalEnvReal-v2` (Only Asynchronous - ROS control)
 
 **Common** parameters for all environments:
 
@@ -191,10 +191,10 @@ The env parameters are explained in the following table:
 
 ### 2. Training in the real world or simulation
  
-- The first step is to check the **train_sim.py** or **train_real.py** files in the scripts folder
+- The first step is to check the `train_sim.py` or `train_real.py` files in the scripts folder
 and modify the parameters accordingly.
-- The RL model parameters are found in the **config** folder inside the project repo.
-- The configuration of the task is also found in the **config** folder inside the project repo. (**reach_task_config_v1.yaml**)
+- The RL model parameters are found in the `config`folder inside the project repo.
+- The configuration of the task is also found in the `config` folder inside the project repo. (`reach_task_config_v1.yaml`)
 
 **Simulation**:
 ```shell
@@ -242,8 +242,8 @@ if __name__ == '__main__':
 
 ### 3. Evaluating the trained model
 
-- The first step is to check the **validate_sim.py** or **evalidate_real.py** files in the scripts folder
-- The RL model parameters are found in the **config** folder inside the project repo.
+- The first step is to check the `validate_sim.py` or `evalidate_real.py` files in the scripts folder
+- The RL model parameters are found in the `config` folder inside the project repo.
 
 **Simulation**:
 ```shell
@@ -308,15 +308,15 @@ if __name__ == '__main__':
 
 ## Issues
 
-If you have installed the Rx200 robot package from the official documentation, you may face an error when running the scripts in this repository. This occurs because the official installation creates a new ROS workspace in your home directory and adds it to the bashrc file. As a result, each time you open a new terminal, the RX200 ROS workspace in your home directory is sourced instead of your catkin_ws directory. To resolve this, you have two options:
+If you have installed the Rx200 robot package from the official documentation, you may face an error when running the scripts in this repository. This occurs because the official installation creates a new ROS workspace in your home directory and adds it to the bashrc file. As a result, each time you open a new terminal, the RX200 ROS workspace in your home directory is sourced instead of your `catkin_ws` directory. To resolve this, you have two options:
 
-1. modify the line in the bashrc file that sources the RX200 ROS workspace. This will ensure that your catkin_ws directory is sourced instead when opening a new terminal.
+1. modify the line in the `bashrc` file that sources the RX200 ROS workspace. This will ensure that your `catkin_ws` directory is sourced instead when opening a new terminal.
 
 2. Source the catkin_ws directory explicitly before running the scripts in this repository. This will override the sourcing of the RX200 ROS workspace and ensure that the correct workspace is used.
 
 By taking one of these steps, you can avoid the error and ensure that the correct workspace is sourced when running the scripts in this repository.
 
-To source the catkin_ws directory, run the following commands in a new terminal:
+To source the `catkin_ws` directory, run the following commands in a new terminal:
 ```shell
 cd ~/catkin_ws/
 source devel/setup.bash
