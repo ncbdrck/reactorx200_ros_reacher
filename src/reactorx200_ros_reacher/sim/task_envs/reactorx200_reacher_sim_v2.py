@@ -241,6 +241,9 @@ class RX200ReacherEnv(reactorx200_robot_sim_v2.RX200RobotEnv):
         # real time parameters
         self.real_time = real_time  # This is already done in the super class. So this is just for readability
 
+        # we can use this to set a time for ros_controllers to complete the action
+        self.environment_loop_time = 1.0 / environment_loop_rate  # in seconds
+
         if environment_loop_rate is not None and real_time:
             self.obs_r = None
             self.reward_r = None
@@ -514,13 +517,14 @@ class RX200ReacherEnv(reactorx200_robot_sim_v2.RX200RobotEnv):
         #     self.movement_result = False
 
         if self.check_goal_reachable_joint_pos(action):
-            rospy.loginfo(f"The ee pose {action} is within the goal space")
 
             # execute the trajectory - ros_controllers
-            self.move_joints(action)
+            self.move_joints(q_positions=action, time_from_start=self.environment_loop_time)
             self.movement_result = True
 
         else:
+            rospy.logwarn(f"The ee pose {action} is not within the goal space!")
+            rospy.logwarn(f"Set action failed for --->: {action}")
             self.movement_result = False
 
         # execute the trajectory - ros_controllers
