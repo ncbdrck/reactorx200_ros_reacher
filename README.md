@@ -104,7 +104,7 @@ Follow these steps to install this package:
 ### 1. Available Environments
 
 **Simulation based on Gazebo:**
-- **Default Envs:**
+- **Base Envs:**
    - `RX200ReacherEnvSim-v0` (deprecated)
    - `RX200ReacherEnvSim-v1` (both sequential and asynchronous - MoveIt)
    - `RX200ReacherEnvSim-v2` (Only Asynchronous - ROS control)
@@ -117,9 +117,9 @@ Follow these steps to install this package:
 
 The env parameters are explained in the following table:
 
-**Common** parameters for all environments:
+**Common** parameters for all environments and their default values:
 
-| Parameter                     | Description                                                           | default | Goal-Conditioned |
+| Parameter                     | Description                                                           | Base | Goal-Conditioned |
 |-------------------------------|-----------------------------------------------------------------------|---------|------------------|
 | launch_gazebo (bool)          | Whether to launch Gazebo or not.                                      | True    | True             |
 | new_roscore (bool)            | Whether to launch a new roscore or not.                               | True    | True             |
@@ -130,14 +130,14 @@ The env parameters are explained in the following table:
 | reward_type (str)             | Type of reward function to use.                                       | 'dense' | 'sparse'         |
 | delta_action (bool)           | Whether to use delta actions or not.                                  | False   | True             |
 | delta_coeff (float)           | Coefficient for the delta action.                                     | 0.05    | 0.05             |
-| real_time (bool)              | Whether to run the simulation in real time or not.                    | False   | True             |
+| real_time (bool)              | Whether to run the simulation in real-time or not.                    | False   | True             |
 | environment_loop_rate (float) | Rate at which the environment should run in Hz. (only for real-time)  | None    | None             |
 | action_cycle_time (float)     | Time to wait between two consecutive actions.                         | 0.0     | 0.0              |
 
 
 
 **Real-World:**
-- **Default Envs:**
+- **Base Envs:**
    - `RX200ReacherEnvReal-v0` (deprecated)
    - `RX200ReacherEnvReal-v1` (both sequential and asynchronous - MoveIt)
    - `RX200ReacherEnvReal-v2` (Only Asynchronous - ROS control)
@@ -148,9 +148,9 @@ The env parameters are explained in the following table:
    - `RX200ReacherGoalEnvReal-v1` (both sequential and asynchronous — MoveIt)
    - `RX200ReacherGoalEnvReal-v2` (Only Asynchronous - ROS control)
 
-**Common** parameters for all environments:
+**Common** parameters for all environments and their default values:
 
-| Parameter                     | Description                                                           | default | Goal-Conditioned |
+| Parameter                     | Description                                                           | Base | Goal-Conditioned |
 |-------------------------------|-----------------------------------------------------------------------|---------|------------------|
 | new_roscore (bool)            | Whether to launch a new roscore or not.                               | True    | True             |
 | roscore_port (str)            | Port of the roscore to be launched. If None, a random port is chosen. | None    | None             |
@@ -158,7 +158,7 @@ The env parameters are explained in the following table:
 | reward_type (str)             | Type of reward function to use.                                       | 'dense' | 'sparse'         |
 | delta_action (bool)           | Whether to use delta actions or not.                                  | False   | True             |
 | delta_coeff (float)           | Coefficient for the delta action.                                     | 0.05    | 0.05             |
-| real_time (bool)              | Whether to run the simulation in real time or not.                    | False   | True             |
+| real_time (bool)              | Whether to run the simulation in real-time or not.                    | False   | True             |
 | environment_loop_rate (float) | Rate at which the environment should run in Hz. (only for real-time)  | None    | None             |
 | action_cycle_time (float)     | Time to wait between two consecutive actions.                         | 0.0     | 0.0              |
 
