@@ -37,12 +37,13 @@ chmod +x xsarm_amd64_install.sh
 ```
 **Note**: This will also install ROS Noetic (if not already installed) and create a new ROS workspace in your home directory. So source your workspace accordingly.
 
-### 4. Rx200 Robot description package
+### 4. Rx200 Robot description package and other supporting packages
 
-This package contains the URDF description of the Rx200 robot. It is a modified version of the original URDF and is necessary to execute this example. You can download it from [here](https://github.com/ncbdrck/rx200_supporting_materials) and follow the instructions to install it.
-```shell
+These packages contain the URDF description of the Rx200 robot. It is a modified version of the original URDF and is necessary to execute this example. 
+```
 cd ~/catkin_ws/src
-git clone https://github.com/ncbdrck/rx200_supporting_materials
+git clone https://github.com/ncbdrck/reactorx200_description.git
+git clone https://github.com/ncbdrck/common-sensors.git
 cd ~/catkin_ws
 rosdep install --from-paths src --ignore-src -r -y
 catkin build
