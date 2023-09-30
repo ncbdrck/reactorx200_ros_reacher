@@ -107,7 +107,7 @@ This repo contains both simulated and real-world environments. Out of these envi
 - `v0` is now deprecated
 - `v1` - Supports both sequential and asynchronous learning and uses **Moveit** to move the robot
 - `v1` - Also supports controlling the robots with joint positions (5 elements) or by giving the end-effector 3D position (3 elements) as actions. (Must be set when initialising the environment. **Default** is Joint positions)
-- `v2` - only supports asynchronous learning and uses **ROS Controllers** to move the robot
+- `v2` - Supports sequential and asynchronous learning and uses **ROS Controllers** (Joint positions) to move the robot. Doesn't support end-effector 3D position.
 
 ### 1. Available Environments
 
@@ -115,13 +115,13 @@ This repo contains both simulated and real-world environments. Out of these envi
 - **Base Envs:**
    - `RX200ReacherEnvSim-v0` (deprecated)
    - `RX200ReacherEnvSim-v1` (both sequential and asynchronous - MoveIt)
-   - `RX200ReacherEnvSim-v2` (Only Asynchronous - ROS control)
+   - `RX200ReacherEnvSim-v2` (both sequential and asynchronous - ROS control)
 
 
 - **Goal-Conditioned Envs:**
    - `RX200ReacherGoalEnvSim-v0` (deprecated)
    - `RX200ReacherGoalEnvSim-v1` (both sequential and asynchronous — MoveIt)
-   - `RX200ReacherGoalEnvSim-v2` (Only Asynchronous - ROS control)
+   - `RX200ReacherGoalEnvSim-v2` (both sequential and asynchronous - ROS control)
 
 The env parameters are explained in the following table:
 
@@ -148,13 +148,13 @@ The env parameters are explained in the following table:
 - **Base Envs:**
    - `RX200ReacherEnvReal-v0` (deprecated)
    - `RX200ReacherEnvReal-v1` (both sequential and asynchronous - MoveIt)
-   - `RX200ReacherEnvReal-v2` (only asynchronous - ROS control)
+   - `RX200ReacherEnvReal-v2` (both sequential and asynchronous - ROS control)
 
 
 - **Goal-Conditioned Envs:**
    - `RX200ReacherGoalEnvReal-v0` (deprecated)
    - `RX200ReacherGoalEnvReal-v1` (both sequential and asynchronous — MoveIt)
-   - `RX200ReacherGoalEnvReal-v2` (only asynchronous - ROS control)
+   - `RX200ReacherGoalEnvReal-v2` (both sequential and asynchronous - ROS control)
 
 **Common** parameters for all environments and their default values:
 
