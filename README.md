@@ -194,7 +194,7 @@ The env parameters are explained in the following table:
 | Action          | Description                                 | v1 | v2 | Elements |
 |-----------------|---------------------------------------------|----|----|----------|
 | EE Position     | 3D end-effector position in the world frame | ✔️ | ❌  | 3        |
-| Joints position | 3D joint angles of the robot                | ✔️ | ✔️ | 5        |
+| Joints position | joint posiions of the robot                | ✔️ | ✔️ | 5        |
 
 ### 2. Training in the real world or simulation
  
