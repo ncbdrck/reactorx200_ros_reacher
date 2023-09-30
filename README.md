@@ -4,8 +4,8 @@ This repository contains experiments conducted to showcase the capabilities of t
 
 Here we show how to train a simple reach task using the [Rx200](https://www.trossenrobotics.com/reactorx-200-robot-arm.aspx) robot.
  
-This repo demonstrate the following features:
- 1. Training the task directly in the real world (No need of a simulation environment - only [ROS_RL](https://github.com/ncbdrck/ros_rl) is required). 
+This repo demonstrates the following features:
+ 1. Training the task directly in the real world (No need for a simulation environment - only [ROS_RL](https://github.com/ncbdrck/ros_rl) is required). 
  2. Training in simulation (using [MultiROS](https://github.com/ncbdrck/multiros) package) and deploying the trained model in the real world.
  3. Real-time training with simulation and real-world data for obtaining better generalization.
 
@@ -19,7 +19,7 @@ This ROS repo requires **ROS_RL** to train or evaluate the reach task in the rea
 
 ### 2. MultiROS
 
-To simulate the task in Gazebo, you need to install the **MultiROS** package. Please follow the instructions in the [MultiROS repository](https://github.com/ncbdrck/multiros) to install MultiROS.
+To simulate the task in Gazebo, you must install the **MultiROS** package. Please follow the instructions in the [MultiROS repository](https://github.com/ncbdrck/multiros) to install MultiROS.
 
 ### 3. Rx200 Robot Repository
 
@@ -101,6 +101,13 @@ Follow these steps to install this package:
    
 ## Usage
 
+This repo contains both simulated and real-world environments. Out of these environments 
+- All the envionmets only supports **continuous** action spaces and **continuous** observation spaces 
+- `v0` is now deprecated
+- `v1` - Supports both sequential and asynchronous learning and uses **only** Moveit to move the robot
+- `v1` - Also supports controlling the robots with joint positions (5 elements) or by giving the end-effector 3D position (3 elements) as actions. (Must be set when initialising the environment. **Default** is Joint positions)
+- `v2` - only supports asynchronous learning and uses ROS Controllers 
+
 ### 1. Available Environments
 
 **Simulation based on Gazebo:**
@@ -117,7 +124,7 @@ Follow these steps to install this package:
 
 The env parameters are explained in the following table:
 
-**Common** parameters for all environments and their default values:
+**Common** parameters for all environments and their **default** values:
 
 | Parameter                     | Description                                                           | Base | Goal-Conditioned |
 |-------------------------------|-----------------------------------------------------------------------|---------|------------------|
@@ -140,13 +147,13 @@ The env parameters are explained in the following table:
 - **Base Envs:**
    - `RX200ReacherEnvReal-v0` (deprecated)
    - `RX200ReacherEnvReal-v1` (both sequential and asynchronous - MoveIt)
-   - `RX200ReacherEnvReal-v2` (Only Asynchronous - ROS control)
+   - `RX200ReacherEnvReal-v2` (only asynchronous - ROS control)
 
 
 - **Goal-Conditioned Envs:**
    - `RX200ReacherGoalEnvReal-v0` (deprecated)
    - `RX200ReacherGoalEnvReal-v1` (both sequential and asynchronous — MoveIt)
-   - `RX200ReacherGoalEnvReal-v2` (Only Asynchronous - ROS control)
+   - `RX200ReacherGoalEnvReal-v2` (only asynchronous - ROS control)
 
 **Common** parameters for all environments and their default values:
 
@@ -163,7 +170,7 @@ The env parameters are explained in the following table:
 | action_cycle_time (float)     | Time to wait between two consecutive actions.                         | 0.0     | 0.0              |
 
 
-**Unique parameters for both environment types are explained in the following table:**
+**Unique parameters for both environment types of both simulated and real-world are explained in the following table:**
 
 | Parameter             | Description                                           | v1 | v2 |
 |-----------------------|-------------------------------------------------------|----|----|
@@ -193,8 +200,8 @@ The env parameters are explained in the following table:
  
 - The first step is to check the `train_sim.py` or `train_real.py` files in the scripts folder
 and modify the parameters accordingly.
-- The RL model parameters are found in the `config`folder inside the project repo.
-- The configuration of the task is also found in the `config` folder inside the project repo. (`reach_task_config_v1.yaml`)
+- The RL model parameters are in the `config` folder in the project repo.
+- The task configuration is also found in the `config` folder inside the project repo. (`reach_task_config_v1.yaml`)
 
 **Simulation**:
 ```shell
@@ -243,7 +250,7 @@ if __name__ == '__main__':
 ### 3. Evaluating the trained model
 
 - The first step is to check the `validate_sim.py` or `evalidate_real.py` files in the scripts folder
-- The RL model parameters are found in the `config` folder inside the project repo.
+- The RL model parameters are in the `config` folder in the project repo.
 
 **Simulation**:
 ```shell
@@ -308,9 +315,10 @@ if __name__ == '__main__':
 
 ## Issues
 
-If you have installed the Rx200 robot package from the official documentation, you may face an error when running the scripts in this repository. This occurs because the official installation creates a new ROS workspace in your home directory and adds it to the bashrc file. As a result, each time you open a new terminal, the RX200 ROS workspace in your home directory is sourced instead of your `catkin_ws` directory. To resolve this, you have two options:
+If you have installed the Rx200 robot package from the official documentation, you may face an error when running the scripts in this repository. This occurs because the official installation creates a new ROS workspace in your home directory and 
+adds it to the `~/.bashrc` file. As a result, each time you open a new terminal, the RX200 ROS workspace in your home directory is sourced instead of your `catkin_ws` directory. To resolve this, you have two options:
 
-1. modify the line in the `bashrc` file that sources the RX200 ROS workspace. This will ensure that your `catkin_ws` directory is sourced instead when opening a new terminal.
+1. modify the line in the `~/.bashrc` file that sources the RX200 ROS workspace. This will ensure that your `catkin_ws` directory is sourced instead when opening a new terminal.
 
 2. Source the catkin_ws directory explicitly before running the scripts in this repository. This will override the sourcing of the RX200 ROS workspace and ensure that the correct workspace is used.
 
