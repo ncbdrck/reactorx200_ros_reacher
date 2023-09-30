@@ -1,4 +1,4 @@
-# Simple Reach Task for ROS_RL and MultiROS
+# Reach Task for ROS_RL and MultiROS
 
 This repository contains experiments conducted to showcase the capabilities of the [ROS_RL](https://github.com/ncbdrck/ros_rl) and [MultiROS](https://github.com/ncbdrck/multiros) frameworks. 
 
