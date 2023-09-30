@@ -7,7 +7,7 @@ Here we show how to train a simple reach task using the [Rx200](https://www.tros
 This repo demonstrates the following features:
  1. Training the task directly in the real world (No need for a simulation environment - only [ROS_RL](https://github.com/ncbdrck/ros_rl) is required). 
  2. Training in simulation (using [MultiROS](https://github.com/ncbdrck/multiros) package) and deploying the trained model in the real world.
- 3. Real-time training with simulation and real-world data for obtaining better generalization.
+ 3. Real-time training with simulation and real-world data for obtaining better generalisation.
 
 ## Prerequisites
 
