@@ -103,11 +103,11 @@ Follow these steps to install this package:
 ## Usage
 
 This repo contains both simulated and real-world environments. Out of these environments 
-- All the envionmets only supports **continuous** action spaces and **continuous** observation spaces 
+- All the environments **only** supports **continuous** action spaces and **continuous** observation spaces 
 - `v0` is now deprecated
-- `v1` - Supports both sequential and asynchronous learning and uses **only** Moveit to move the robot
+- `v1` - Supports both sequential and asynchronous learning and uses **Moveit** to move the robot
 - `v1` - Also supports controlling the robots with joint positions (5 elements) or by giving the end-effector 3D position (3 elements) as actions. (Must be set when initialising the environment. **Default** is Joint positions)
-- `v2` - only supports asynchronous learning and uses ROS Controllers 
+- `v2` - only supports asynchronous learning and uses **ROS Controllers** to move the robot
 
 ### 1. Available Environments
 
