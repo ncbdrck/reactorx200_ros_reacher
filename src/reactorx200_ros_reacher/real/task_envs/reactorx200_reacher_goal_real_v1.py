@@ -60,12 +60,14 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_real_v1.RX200RobotGoalEnv):
         * real_time: Whether to use real time or not. (Asynchronous instead of sequential)
         * environment_loop_rate: Rate at which the environment loop should run. (in Hz)
         * action_cycle_time: Time to wait between two consecutive actions. (in seconds)
+        * use_smoothing: Whether to use smoothing for actions or not.
     """
 
     def __init__(self, new_roscore: bool = False, roscore_port: str = None, seed: int = None,
                  close_env_prompt: bool = True, reward_type: str = "sparse", ee_action_type: bool = False,
                  delta_action: bool = True, delta_coeff: float = 0.05, real_time: bool = False,
-                 environment_loop_rate: float = None, action_cycle_time: float = 0.0):
+                 environment_loop_rate: float = None, action_cycle_time: float = 0.0,
+                 use_smoothing: bool = False):
 
         """
         variables to keep track of ros port
@@ -136,6 +138,12 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_real_v1.RX200RobotGoalEnv):
         """
         self.delta_action = delta_action
         self.delta_coeff = delta_coeff
+
+        """
+        Use smoothing for actions
+        """
+        self.use_smoothing = use_smoothing
+        self.action_cycle_time = action_cycle_time
 
         """
         Real time parameters
@@ -292,6 +300,13 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_real_v1.RX200RobotGoalEnv):
         super().__init__(ros_port=ros_port, seed=seed, close_env_prompt=close_env_prompt, async_moveit=async_moveit,
                          action_cycle_time=action_cycle_time)
 
+        # for smoothing
+        if self.use_smoothing:
+            if self.ee_action_type:
+                self.action_vector = np.zeros(3, dtype=np.float32)
+            else:
+                self.action_vector = np.zeros(5, dtype=np.float32)
+
         # set the initial parameters for real time envs
         if environment_loop_rate is not None and self.real_time:
             self.obs_r = None
@@ -338,6 +353,13 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_real_v1.RX200RobotGoalEnv):
         if self.real_time:
             self.init_done = False  # we don't need to execute the loop until we reset the env
             self.current_action = None
+
+        # reset the action vector
+        if self.use_smoothing:
+            if self.ee_action_type:
+                self.action_vector = np.zeros(3, dtype=np.float32)
+            else:
+                self.action_vector = np.zeros(5, dtype=np.float32)
 
         # stop the robot and move to the Home
         self.move_RX200_object.stop_arm()
@@ -545,7 +567,30 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_real_v1.RX200RobotGoalEnv):
 
             # --- Make actions as deltas
             if self.delta_action:
-                action = self.ee_pos + (action * self.delta_coeff)
+                # we can use smoothing using the action_cycle_time or delta_coeff
+                if self.use_smoothing:
+                    if self.action_cycle_time is None:
+                        # first derivative of the action
+                        self.action_vector = self.action_vector + (self.delta_coeff * action)
+
+                        # clip the action vector to be within -1 and 1
+                        self.action_vector = np.clip(self.action_vector, -1, 1)
+
+                        # add the action vector to the current ee pos
+                        action = self.ee_pos + (self.action_vector * self.delta_coeff)
+
+                    else:
+                        # first derivative of the action
+                        self.action_vector = self.action_vector + (self.action_cycle_time * action)
+
+                        # clip the action vector to be within -1 and 1
+                        self.action_vector = np.clip(self.action_vector, -1, 1)
+
+                        # add the action vector to the current ee pos
+                        action = self.ee_pos + (self.action_vector * self.action_cycle_time)
+
+                else:
+                    action = self.ee_pos + (action * self.delta_coeff)
 
             # check if the action is within the joint limits
             min_ee_values = np.array(self.min_ee_values)
@@ -571,7 +616,30 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_real_v1.RX200RobotGoalEnv):
 
             # --- Make actions as deltas
             if self.delta_action:
-                action = self.joint_values + (action * self.delta_coeff)
+                # we can use smoothing using the action_cycle_time or delta_coeff
+                if self.use_smoothing:
+                    if self.action_cycle_time is None:
+                        # first derivative of the action
+                        self.action_vector = self.action_vector + (self.delta_coeff * action)
+
+                        # clip the action vector to be within -1 and 1
+                        self.action_vector = np.clip(self.action_vector, -1, 1)
+
+                        # add the action vector to the current ee pos
+                        action = self.joint_values + (self.action_vector * self.delta_coeff)
+
+                    else:
+                        # first derivative of the action
+                        self.action_vector = self.action_vector + (self.action_cycle_time * action)
+
+                        # clip the action vector to be within -1 and 1
+                        self.action_vector = np.clip(self.action_vector, -1, 1)
+
+                        # add the action vector to the current ee pos
+                        action = self.joint_values + (self.action_vector * self.action_cycle_time)
+
+                else:
+                    action = self.joint_values + (action * self.delta_coeff)
 
             # check if the action is within the joint limits
             min_joint_values = np.array(self.min_joint_values)
