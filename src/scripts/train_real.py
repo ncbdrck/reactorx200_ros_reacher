@@ -33,17 +33,20 @@ if __name__ == '__main__':
     # ros_common.clean_ros_logs()
 
     # --- normal environments
-    # env = ros_rl_gym.make('RX200ReacherEnvReal-v0', ee_action_type=False, delta_action=False)
+    # env = ros_rl_gym.make('RX200ReacherEnvReal-v1', ee_action_type=False, delta_action=True, real_time=True,
+    #                       reward_type="dense", environment_loop_rate=10.0, action_cycle_time=0.8, seed=10,
+    #                       use_smoothing=False)
 
-    env = gym.make('RX200ReacherEnvSim-v2',  delta_action=True, real_time=True, reward_type="dense",
-                   environment_loop_rate=50.0, action_cycle_time=0.2, seed=10)
+    env = gym.make('RX200ReacherEnvSim-v2', delta_action=True, real_time=True, reward_type="dense",
+                   environment_loop_rate=10.0, action_cycle_time=0.8, seed=10, use_smoothing=False)
 
     # --- goal-conditioned environments
-    # env = ros_rl_gym.make('RX200ReacherGoalEnvReal-v0', ee_action_type=False, delta_action=False,
-    #                       reward_type="sparse")
+    # env = ros_rl_gym.make('RX200ReacherGoalEnvReal-v1', ee_action_type=False, delta_action=False,
+    #                       real_time=True, reward_type="sparse", environment_loop_rate=10.0, action_cycle_time=0.8,
+    #                       seed=10, use_smoothing=False)
 
     # env = gym.make('RX200ReacherGoalEnvSim-v2', delta_action=True, reward_type="sparse", real_time=True,
-    #                environment_loop_rate=50.0, action_cycle_time=0.2, seed=10)
+    #                environment_loop_rate=10.0, action_cycle_time=0.8, seed=10, use_smoothing=False)
 
     # Normalize action space
     env = NormalizeActionWrapper(env)
