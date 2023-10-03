@@ -65,18 +65,24 @@ if __name__ == '__main__':
 
     # # Default base environments - SAC
     # model_path = "/models/real/sac/" + "trained_model_mar10"
+    # config_file_name = "sac.yaml"
     # # Load the model
-    # model = SAC.load_trained_model(model_path=model_path, model_pkg_path=pkg_path)
+    # model = SAC.load_trained_model(model_path=model_path, model_pkg=pkg_path, config_filename=config_file_name,
+    #                                    env=env)
 
     # Default base environments - TD3
     model_path = "/models/real/td3/" + "trained_model_mar10"
+    config_file_name = "td3.yaml"
     # create the model
-    model = TD3.load_trained_model(model_path=model_path, model_pkg_path=pkg_path)
+    model = TD3.load_trained_model(model_path=model_path, model_pkg=pkg_path, config_filename=config_file_name,
+                                   env=env)
 
     # # Goal-conditioned environments - TD3+HER
     # model_path = "/models/real/td3_goal/" + "trained_model_mar10"
+    # config_file_name = "td3_goal.yaml"
     # # Load the model
-    # model = TD3_GOAL.load_trained_model(model_path=model_path, model_pkg_path=pkg_path)
+    # model = TD3_GOAL.load_trained_model(model_path=model_path, model_pkg=pkg_path, config_filename=config_file_name,
+    #                                    env=env)
 
     obs = env.reset()
     episodes = 1000

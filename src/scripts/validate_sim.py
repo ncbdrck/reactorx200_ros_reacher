@@ -51,7 +51,6 @@ if __name__ == '__main__':
     # env = gym.make('RX200ReacherGoalEnvSim-v2', gazebo_gui=False, delta_action=True,
     #                reward_type="sparse", real_time=True, environment_loop_rate=50.0, action_cycle_time=0.2, seed=0)
 
-
     # Normalize action space
     env = NormalizeActionWrapper(env)
 
@@ -72,18 +71,24 @@ if __name__ == '__main__':
 
     # # Default base environments - SAC
     # model_path = "/models/sim/sac/" + "trained_model_mar10"
+    # config_file_name = "sac.yaml"
     # # Load the model
-    # model = SAC.load_trained_model(model_path=model_path, model_pkg_path=pkg_path)
+    # model = SAC.load_trained_model(model_path=model_path, model_pkg=pkg_path, config_filename=config_file_name,
+    #                                env=env)
 
     # Default base environments - TD3
     model_path = "/models/sim/td3/" + "trained_model_mar10"
+    config_file_name = "td3.yaml"
     # Load the model
-    model = TD3.load_trained_model(model_path=model_path, model_pkg_path=pkg_path)
+    model = TD3.load_trained_model(model_path=model_path, model_pkg=pkg_path, config_filename=config_file_name,
+                                   env=env)
 
     # # Goal-conditioned environments - TD3+HER
     # model_path = "/models/sim/td3_goal/"
+    # config_file_name = "td3_goal.yaml"
     # # Load the model
-    # model = TD3_GOAL.load_trained_model(model_path=model_path, model_pkg_path=pkg_path)
+    # model = TD3_GOAL.load_trained_model(model_path=model_path, model_pkg=pkg_path, config_filename=config_file_name,
+    #                                     env=env)
 
     obs = env.reset()
     episodes = 1000
