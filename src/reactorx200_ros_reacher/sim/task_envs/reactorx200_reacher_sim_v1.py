@@ -528,7 +528,7 @@ class RX200ReacherEnv(reactorx200_robot_sim_v2.RX200RobotEnv):
             if self.delta_action:
                 # we can use smoothing using the action_cycle_time or delta_coeff
                 if self.use_smoothing:
-                    if self.action_cycle_time is None:
+                    if self.action_cycle_time == 0.0:
                         # first derivative of the action
                         self.action_vector = self.action_vector + (self.delta_coeff * action)
 
@@ -577,7 +577,7 @@ class RX200ReacherEnv(reactorx200_robot_sim_v2.RX200RobotEnv):
             if self.delta_action:
                 # we can use smoothing using the action_cycle_time or delta_coeff
                 if self.use_smoothing:
-                    if self.action_cycle_time is None:
+                    if self.action_cycle_time == 0.0:
                         # first derivative of the action
                         self.action_vector = self.action_vector + (self.delta_coeff * action)
 
