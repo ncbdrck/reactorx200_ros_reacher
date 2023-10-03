@@ -59,12 +59,14 @@ class RX200ReacherEnv(reactorx200_robot_sim_v2.RX200RobotEnv):
         * real_time: Whether to use real time or not.
         * environment_loop_rate: Rate at which the environment should run. (in Hz)
         * action_cycle_time: Time to wait between two consecutive actions. (in seconds)
+        * use_smoothing: Whether to use smoothing for actions or not.
     """
 
     def __init__(self, launch_gazebo: bool = True, new_roscore: bool = True, roscore_port: str = None,
                  gazebo_paused: bool = False, gazebo_gui: bool = False, seed: int = None, reward_type: str = "Dense",
                  delta_action: bool = True, delta_coeff: float = 0.05,
-                 real_time: bool = True, environment_loop_rate: float = None, action_cycle_time: float = 0.0):
+                 real_time: bool = True, environment_loop_rate: float = None, action_cycle_time: float = 0.0,
+                 use_smoothing: bool = False):
 
         """
         variables to keep track of ros, gazebo ports and gazebo pid
@@ -146,6 +148,12 @@ class RX200ReacherEnv(reactorx200_robot_sim_v2.RX200RobotEnv):
         """
         self.delta_action = delta_action
         self.delta_coeff = delta_coeff
+
+        """
+        Use smoothing for actions
+        """
+        self.use_smoothing = use_smoothing
+        self.action_cycle_time = action_cycle_time
 
         """
         Load YAML param file
@@ -239,8 +247,12 @@ class RX200ReacherEnv(reactorx200_robot_sim_v2.RX200RobotEnv):
         super().__init__(ros_port=ros_port, gazebo_port=gazebo_port, gazebo_pid=gazebo_pid, seed=seed,
                          real_time=real_time, action_cycle_time=action_cycle_time)
 
+        # for smoothing
+        if self.use_smoothing:
+            self.action_vector = np.zeros(5, dtype=np.float32)
+
         # real time parameters
-        self.real_time = real_time  # This is already done in the super class. So this is just for readability
+        self.real_time = real_time  # This is already done in the superclass. So this is just for readability
 
         # we can use this to set a time for ros_controllers to complete the action
         self.environment_loop_time = 1.0 / environment_loop_rate  # in seconds
@@ -290,6 +302,10 @@ class RX200ReacherEnv(reactorx200_robot_sim_v2.RX200RobotEnv):
         if self.real_time:
             self.init_done = False  # we don't need to execute the loop until we reset the env
             self.current_action = None
+
+        # for smoothing
+        if self.use_smoothing:
+            self.action_vector = np.zeros(5, dtype=np.float32)
 
         # move the robot to the home pose
         # we need to wait for the movement to finish
@@ -490,7 +506,31 @@ class RX200ReacherEnv(reactorx200_robot_sim_v2.RX200RobotEnv):
 
         # --- Make actions as deltas
         if self.delta_action:
-            action = self.joint_values + (action * self.delta_coeff)
+
+            # we can use smoothing using the action_cycle_time or delta_coeff
+            if self.use_smoothing:
+                if self.action_cycle_time is None:
+                    # first derivative of the action
+                    self.action_vector = self.action_vector + (self.delta_coeff * action)
+
+                    # clip the action vector to be within -1 and 1
+                    self.action_vector = np.clip(self.action_vector, -1, 1)
+
+                    # add the action vector to the current ee pos
+                    action = self.joint_values + (self.action_vector * self.delta_coeff)
+
+                else:
+                    # first derivative of the action
+                    self.action_vector = self.action_vector + (self.action_cycle_time * action)
+
+                    # clip the action vector to be within -1 and 1
+                    self.action_vector = np.clip(self.action_vector, -1, 1)
+
+                    # add the action vector to the current ee pos
+                    action = self.joint_values + (self.action_vector * self.action_cycle_time)
+
+            else:
+                action = self.joint_values + (action * self.delta_coeff)
 
         # check if the action is within the joint limits
         min_joint_values = np.array(self.min_joint_values)
@@ -567,7 +607,7 @@ class RX200ReacherEnv(reactorx200_robot_sim_v2.RX200RobotEnv):
         # --- Get Current Joint values - only for the joints we are using
         #  we need this for delta actions
         # self.joint_values = self.current_joint_positions.copy()  # Get a float list
-        self.joint_values = self.get_joint_angles() # Get a float list
+        self.joint_values = self.get_joint_angles()  # Get a float list
         # we don't need to convert this to numpy array since we concat using numpy below
 
         # our observations
