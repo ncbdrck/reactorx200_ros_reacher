@@ -141,7 +141,7 @@ The env parameters are explained in the following table:
 | real_time (bool)              | Whether to run the simulation in real-time or not.                    | False   | True             |
 | environment_loop_rate (float) | Rate at which the environment should run in Hz. (only for real-time)  | None    | None             |
 | action_cycle_time (float)     | Time to wait between two consecutive actions.                         | 0.0     | 0.0              |
-| use_smoothing (bool)          | Whether to use action smoothing or not.                               | False   | False            |
+| use_smoothing (bool)          | Whether to use action smoothing or not. delta_action should be True. Use delta_coeff if action_cycle_time is zero                                 | False   | False            |
 
 
 
