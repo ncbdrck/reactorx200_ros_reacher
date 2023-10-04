@@ -185,7 +185,7 @@ The env parameters are explained in the following table:
 | Observation                    | Description                                                | Elements             |
 |--------------------------------|------------------------------------------------------------|----------------------|
 | End effector position          | Position of the end effector in the world frame            | 3                    |
-| Vector to the goal             | normalized linear distance between the EE pos and the Goal | 3                    |
+| Vector to the goal             | Normalized linear distance between the EE pos and the Goal | 3                    |
 | Euclidian distance to the goal | Euclidian distance between the EE pos and the Goal         | 1                    |
 | Current joint angles           | Current joint angles of the robot                          | 8                    |
 | Previous action                | Previous action taken by the agent                         | 5 or 3 (joint or ee) |
