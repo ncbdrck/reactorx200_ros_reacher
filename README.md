@@ -138,7 +138,7 @@ The env parameters are explained in the following table:
 | reward_type (str)             | Type of reward function to use.                                       | 'dense' | 'sparse'         |
 | delta_action (bool)           | Whether to use delta actions or not.                                  | False   | True             |
 | delta_coeff (float)           | Coefficient for the delta action.                                     | 0.05    | 0.05             |
-| real_time (bool)              | Whether to run the simulation in real-time or not.                    | False   | True             |
+| real_time (bool)              | Whether to run the simulation in real-time or not. Don't pause Gazebo and use asynchronous learning mode if 'True'                     | False   | True             |
 | environment_loop_rate (float) | Rate at which the environment should run in Hz. (only for real-time)  | None    | None             |
 | action_cycle_time (float)     | Time to wait between two consecutive actions.                         | 0.0     | 0.0              |
 | use_smoothing (bool)          | Whether to use action smoothing or not. 'delta_action' should be 'True'. Use 'delta_coeff' if 'action_cycle_time' is zero                                 | False   | False            |
@@ -167,7 +167,7 @@ The env parameters are explained in the following table:
 | reward_type (str)             | Type of reward function to use.                                       | 'dense' | 'sparse'         |
 | delta_action (bool)           | Whether to use delta actions or not.                                  | False   | True             |
 | delta_coeff (float)           | Coefficient for the delta action.                                     | 0.05    | 0.05             |
-| real_time (bool)              | Whether to run the simulation in real-time or not.                    | False   | True             |
+| real_time (bool)              | Whether to run in asynchronous learning mode or not.                  | False   | True             |
 | environment_loop_rate (float) | Rate at which the environment should run in Hz. (only for real-time)  | None    | None             |
 | action_cycle_time (float)     | Time to wait between two consecutive actions.                         | 0.0     | 0.0              |
 | use_smoothing (bool)          | Whether to use action smoothing or not. 'delta_action' should be 'True'. Use 'delta_coeff' if 'action_cycle_time' is zero                                 | False   | False            |
