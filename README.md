@@ -125,7 +125,7 @@ This repo contains both simulated and real-world environments. Out of these envi
 
 The env parameters are explained in the following table:
 
-**Common** parameters for all environments and their **default** values:
+**Common** parameters for all simulated environments and their **default** values:
 
 | Parameter                     | Description                                                           | Base | Goal-Conditioned |
 |-------------------------------|-----------------------------------------------------------------------|---------|------------------|
@@ -141,6 +141,7 @@ The env parameters are explained in the following table:
 | real_time (bool)              | Whether to run the simulation in real-time or not.                    | False   | True             |
 | environment_loop_rate (float) | Rate at which the environment should run in Hz. (only for real-time)  | None    | None             |
 | action_cycle_time (float)     | Time to wait between two consecutive actions.                         | 0.0     | 0.0              |
+| use_smoothing (bool)          | Whether to use action smoothing or not.                               | False   | False            |
 
 
 
@@ -156,7 +157,7 @@ The env parameters are explained in the following table:
    - `RX200ReacherGoalEnvReal-v1` (both sequential and asynchronous — MoveIt)
    - `RX200ReacherGoalEnvReal-v2` (both sequential and asynchronous - ROS control)
 
-**Common** parameters for all environments and their default values:
+**Common** parameters for all real-world environments and their default values:
 
 | Parameter                     | Description                                                           | Base | Goal-Conditioned |
 |-------------------------------|-----------------------------------------------------------------------|---------|------------------|
