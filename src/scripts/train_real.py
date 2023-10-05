@@ -37,7 +37,7 @@ if __name__ == '__main__':
     #                       reward_type="dense", environment_loop_rate=10.0, action_cycle_time=0.8, seed=10,
     #                       use_smoothing=False)
 
-    env = gym.make('RX200ReacherEnvSim-v2', delta_action=True, real_time=True, reward_type="dense",
+    env = gym.make('RX200ReacherEnvReal-v2', delta_action=True, real_time=True, reward_type="dense",
                    environment_loop_rate=10.0, action_cycle_time=0.8, seed=10, use_smoothing=False)
 
     # --- goal-conditioned environments
@@ -45,7 +45,7 @@ if __name__ == '__main__':
     #                       real_time=True, reward_type="sparse", environment_loop_rate=10.0, action_cycle_time=0.8,
     #                       seed=10, use_smoothing=False)
 
-    # env = gym.make('RX200ReacherGoalEnvSim-v2', delta_action=True, reward_type="sparse", real_time=True,
+    # env = gym.make('RX200ReacherGoalEnvReal-v2', delta_action=True, reward_type="sparse", real_time=True,
     #                environment_loop_rate=10.0, action_cycle_time=0.8, seed=10, use_smoothing=False)
 
     # Normalize action space
