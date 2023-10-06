@@ -125,7 +125,7 @@ This repo contains both simulated and real-world environments. Out of these envi
 
 The env parameters are explained in the following table:
 
-**Common** parameters for all environments and their **default** values:
+**Common** parameters for all simulated environments and their **default** values:
 
 | Parameter                     | Description                                                           | Base | Goal-Conditioned |
 |-------------------------------|-----------------------------------------------------------------------|---------|------------------|
@@ -138,9 +138,10 @@ The env parameters are explained in the following table:
 | reward_type (str)             | Type of reward function to use.                                       | 'dense' | 'sparse'         |
 | delta_action (bool)           | Whether to use delta actions or not.                                  | False   | True             |
 | delta_coeff (float)           | Coefficient for the delta action.                                     | 0.05    | 0.05             |
-| real_time (bool)              | Whether to run the simulation in real-time or not.                    | False   | True             |
+| real_time (bool)              | Whether to run the simulation in real-time or not. Don't pause Gazebo and use asynchronous learning mode if 'True'                     | False   | True             |
 | environment_loop_rate (float) | Rate at which the environment should run in Hz. (only for real-time)  | None    | None             |
 | action_cycle_time (float)     | Time to wait between two consecutive actions.                         | 0.0     | 0.0              |
+| use_smoothing (bool)          | Whether to use action smoothing or not. 'delta_action' should be 'True'. Use 'delta_coeff' if 'action_cycle_time' is zero                                 | False   | False            |
 
 
 
@@ -156,7 +157,7 @@ The env parameters are explained in the following table:
    - `RX200ReacherGoalEnvReal-v1` (both sequential and asynchronous — MoveIt)
    - `RX200ReacherGoalEnvReal-v2` (both sequential and asynchronous - ROS control)
 
-**Common** parameters for all environments and their default values:
+**Common** parameters for all real-world environments and their default values:
 
 | Parameter                     | Description                                                           | Base | Goal-Conditioned |
 |-------------------------------|-----------------------------------------------------------------------|---------|------------------|
@@ -166,10 +167,10 @@ The env parameters are explained in the following table:
 | reward_type (str)             | Type of reward function to use.                                       | 'dense' | 'sparse'         |
 | delta_action (bool)           | Whether to use delta actions or not.                                  | False   | True             |
 | delta_coeff (float)           | Coefficient for the delta action.                                     | 0.05    | 0.05             |
-| real_time (bool)              | Whether to run the simulation in real-time or not.                    | False   | True             |
+| real_time (bool)              | Whether to run in asynchronous learning mode or not.                  | False   | True             |
 | environment_loop_rate (float) | Rate at which the environment should run in Hz. (only for real-time)  | None    | None             |
 | action_cycle_time (float)     | Time to wait between two consecutive actions.                         | 0.0     | 0.0              |
-| use_smoothing (bool)          | Whether to use action smoothing or not.                               | False   | False            |
+| use_smoothing (bool)          | Whether to use action smoothing or not. 'delta_action' should be 'True'. Use 'delta_coeff' if 'action_cycle_time' is zero                                 | False   | False            |
 
 
 **Unique parameters for both environment types of both simulated and real-world are explained in the following table:**
@@ -184,7 +185,7 @@ The env parameters are explained in the following table:
 | Observation                    | Description                                                | Elements             |
 |--------------------------------|------------------------------------------------------------|----------------------|
 | End effector position          | Position of the end effector in the world frame            | 3                    |
-| Vector to the goal             | normalized linear distance between the EE pos and the Goal | 3                    |
+| Vector to the goal             | Normalized linear distance between the EE pos and the Goal | 3                    |
 | Euclidian distance to the goal | Euclidian distance between the EE pos and the Goal         | 1                    |
 | Current joint angles           | Current joint angles of the robot                          | 8                    |
 | Previous action                | Previous action taken by the agent                         | 5 or 3 (joint or ee) |
