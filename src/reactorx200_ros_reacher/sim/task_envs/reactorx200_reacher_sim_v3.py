@@ -8,7 +8,7 @@ from gym.envs.registration import register
 import scipy.spatial
 
 # Custom robot env
-from reactorx200_ros_reacher.sim.robot_envs import reactorx200_robot_sim_v2
+from reactorx200_ros_reacher.sim.robot_envs import reactorx200_robot_sim_v3
 
 # core modules of the framework
 from multiros.utils import gazebo_core
@@ -21,21 +21,18 @@ from multiros.utils import ros_markers
 
 # Register your environment using the OpenAI register method to utilize gym.make("TaskEnv-v0").
 register(
-    id='RX200ReacherEnvSim-v2',
-    entry_point='reactorx200_ros_reacher.sim.task_envs.reactorx200_reacher_sim_v2:RX200ReacherEnv',
+    id='RX200ReacherEnvSim-v3',
+    entry_point='reactorx200_ros_reacher.sim.task_envs.reactorx200_reacher_sim_v3:RX200ReacherEnv',
     max_episode_steps=1000,
 )
 
 """
-This is the v2 of the RX200 Reacher Task Environment. Following are the new features of this environment:
-    * Changed the observation - now we have the velocity of each joint as well as previous actions as part of the obs
-    * We are using ros_controllers to control the robot. Low level control is done using ros_controllers
-    * changed the task config file to yaml
-    * No EE action space - we are using joint action space
+This is the v3 of the RX200 Reacher Task Environment. Following are the new features of this environment:
+    * We do FK to check if the given action is within the goal space
 """
 
 
-class RX200ReacherEnv(reactorx200_robot_sim_v2.RX200RobotEnv):
+class RX200ReacherEnv(reactorx200_robot_sim_v3.RX200RobotEnv):
     """
     This Task env is for a simple Reach Task with the RX200 robot.
 
@@ -340,6 +337,7 @@ class RX200ReacherEnv(reactorx200_robot_sim_v2.RX200RobotEnv):
 
         # for dense reward calculation
         self.action_not_in_limits = False
+        self.within_goal_space = True
 
         # We can start the environment loop now
         if self.real_time:
@@ -541,36 +539,27 @@ class RX200ReacherEnv(reactorx200_robot_sim_v2.RX200RobotEnv):
         # clip the action
         # rospy.logwarn(f"Action + current joint_values before clip --->: {action}")
         action = np.clip(action, self.min_joint_values, self.max_joint_values)
-        # rospy.logwarn(f"Action after --->: {action}")
+        # rospy.logwarn(f"Action + current joint_values after clip --->: {action}")
 
-        # check if the resulting ee pose is within the goal space - using FK
-        # ee_pos, ee_rpy = self.compute_forward_kinematics(action)
-        #
-        # check if the ee pose is within the goal space - using self.goal_space
-        # if self.goal_space.contains(ee_pos):
-        #     rospy.loginfo(f"The ee pose {ee_pos} is within the goal space")
-        #
-        #     # execute the trajectory - ros_controllers
-        #     self.move_joints(action)
-        #     self.movement_result = True
-        #
-        # else:
-        #     self.movement_result = False
+        # check if the ee pose is within the goal space - using FK
+        self.within_goal_space= self.check_action_within_goal_space(action)
 
-        if self.check_goal_reachable_joint_pos(action):
+        if self.within_goal_space:
 
-            # execute the trajectory - ros_controllers
-            self.move_joints(q_positions=action, time_from_start=self.environment_loop_time)
-            self.movement_result = True
+            if self.check_goal_reachable_joint_pos(action):
+
+                # execute the trajectory - ros_controllers
+                self.move_joints(q_positions=action, time_from_start=self.environment_loop_time)
+                self.movement_result = True
+
+            else:
+                rospy.logwarn(f"The action: {action} is not reachable!")
+                rospy.logdebug(f"Set action failed for --->: {action}")
+                self.movement_result = False
 
         else:
-            rospy.logwarn(f"The ee pose {action} is not within the goal space!")
-            rospy.logwarn(f"Set action failed for --->: {action}")
+            rospy.logdebug(f"Set action failed for --->: {action}")
             self.movement_result = False
-
-        # execute the trajectory - ros_controllers
-        # self.move_joints(action)
-        # self.movement_result = True
 
     def sample_observation(self):
         """
@@ -695,6 +684,9 @@ class RX200ReacherEnv(reactorx200_robot_sim_v2.RX200RobotEnv):
             # - Check if actions are in limits
             reward += self.action_not_in_limits * self.joint_limits_reward
 
+            # - Check if the action is within the goal space
+            reward += (not self.within_goal_space) * self.not_within_goal_space_reward
+
             # to punish for actions where we cannot execute
             if not self.movement_result:
                 reward += self.none_exe_reward
@@ -784,6 +776,27 @@ class RX200ReacherEnv(reactorx200_robot_sim_v2.RX200RobotEnv):
 
         return False, None
 
+    def check_action_within_goal_space(self, action, max_tries: int = 5):
+        """
+        Function to check if the given action is within the goal space
+        """
+        for i in range(max_tries):
+            # check if the resulting ee pose is within the goal space - using FK
+            # self.ee_link and the ref_frame are defined in the superclass
+            ee_pos = self.calculate_fk(action=action, ee_link=self.ee_link, ref_frame=self.ref_frame)
+
+            if ee_pos is not None:
+                # check if the ee pose is within the goal space - using self.goal_space
+                if self.goal_space.contains(ee_pos):
+                    rospy.logdebug(f"The ee pose of the {action} is within the goal space!")
+                    return True
+                else:
+                    rospy.logdebug(f"The ee pose of the {ee_pos} is not within the goal space!")
+                    return False
+
+        rospy.logwarn("Checking if the action is within the goal space failed!")
+        return False
+
     def _get_params(self):
         """
         Function to get configuration parameters (optional)
@@ -831,6 +844,7 @@ class RX200ReacherEnv(reactorx200_robot_sim_v2.RX200RobotEnv):
         self.reached_goal_reward = rospy.get_param('/rx200/reached_goal_reward')
         self.joint_limits_reward = rospy.get_param('/rx200/joint_limits_reward')
         self.none_exe_reward = rospy.get_param('/rx200/none_exe_reward')
+        self.not_within_goal_space_reward = rospy.get_param('/rx200/not_within_goal_space_reward')
 
     # ------------------------------------------------------
     #   Task Methods for launching gazebo or roscore

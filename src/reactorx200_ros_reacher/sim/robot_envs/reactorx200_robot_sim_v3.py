@@ -26,6 +26,9 @@ import PyKDL
 from urdf_parser_py.urdf import URDF
 from tf.transformations import euler_from_quaternion, quaternion_matrix
 
+from moveit_msgs.srv import GetPositionFK, GetPositionFKRequest
+from moveit_msgs.msg import RobotState
+
 """
 Although it is best to register only the task environment, one can also register the robot environment. 
 This is not necessary, but we can see if this section 
@@ -47,10 +50,8 @@ class RX200RobotEnv(GazeboBaseEnv.GazeboBaseEnv):
     """
     Superclass for all RX200 Robot environments.
 
-    This is the v2 of the robot environment. Following are the changes from the v1:
-        * Use moveit check if the goal is reachable - joint positions
-        * Get joint states for velocity and position
-        * use ros_controllers to control the robot - more low-level control
+    This is the v3 of the robot environment. Following are the changes from the v2:
+        * FK loop to get the end-effector pose
     """
 
     def __init__(self, ros_port: str = None, gazebo_port: str = None, gazebo_pid=None, seed: int = None,
@@ -260,7 +261,10 @@ class RX200RobotEnv(GazeboBaseEnv.GazeboBaseEnv):
                                                                JointTrajectory,
                                                                queue_size=10)
 
-
+        # rosservice name for FK
+        self.fk_service_name = namespace + "/compute_fk"
+        self.ee_link = namespace + "/ee_gripper_link"
+        self.ref_frame = namespace + "/base_link"  # not necessary. by default, it uses the base_link
 
         """
         Finished __init__ method
@@ -286,6 +290,62 @@ class RX200RobotEnv(GazeboBaseEnv.GazeboBaseEnv):
         * check_goal: Check if the goal is reachable
         * check_goal_reachable_joint_pos: Check if the goal is reachable with joint positions
     """
+    def calculate_fk(self, action, ee_link, ref_frame=None):
+        """
+        Function to calculate the forward kinematics of the robot arm. We are using a service from moveit.
+
+        Args:
+            action: joint positions of the robot arm
+            ee_link: end-effector link
+            ref_frame: reference frame (optional)
+
+        Returns:
+            ee_pose_np: end-effector pose as a numpy array
+
+        https://github.com/uts-magic-lab/moveit_python_tools/blob/master/src/moveit_python_tools/get_fk.py
+        """
+        # Create a RobotState message to hold the input joint values
+        robot_state = RobotState()
+        robot_state.joint_state.name = self.joint_state.name
+        robot_state.joint_state.position = list(self.joint_state.position)  # Copy the current joint positions
+
+        # Set the positions of the joints in your action space
+        for joint_name, joint_position in zip(self.joint_names, action):
+            index = robot_state.joint_state.name.index(joint_name)
+            robot_state.joint_state.position[index] = joint_position
+
+        # Create a FK service request
+        fk_request = GetPositionFKRequest()
+        fk_request.robot_state = robot_state
+        fk_request.fk_link_names = [ee_link]
+
+        # Specify the frame of reference
+        if ref_frame is not None:
+            fk_request.header.frame_id = ref_frame
+
+        # Call the FK service and get the response
+        rospy.wait_for_service(self.fk_service_name)
+
+        try:
+            fk_service = rospy.ServiceProxy(self.fk_service_name, GetPositionFK)
+            fk_response = fk_service(fk_request)
+
+            if len(fk_response.pose_stamped) >= 1:
+
+                # Get the end-effector pose from the response
+                ee_pose = fk_response.pose_stamped[0].pose
+                # Convert ee_pose to a numpy array
+                ee_pose_np = np.array([ee_pose.position.x, ee_pose.position.y, ee_pose.position.z])
+
+                return ee_pose_np
+            else:
+                rospy.logerr("Failed to compute forward kinematics: pose_stamped list is empty")
+                return None
+
+        except rospy.ServiceException as e:
+            rospy.logerr("Failed to call service: " + str(e))
+
+            return None
 
     def joint_state_callback(self, joint_state):
         """
