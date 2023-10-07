@@ -46,7 +46,12 @@ register(
     max_episode_steps=1000,
 )
 
-
+# RX200 Reacher Multiros Default Environment v3
+register(
+    id='RX200ReacherEnvSim-v3',
+    entry_point='reactorx200_ros_reacher.sim.task_envs.reactorx200_reacher_sim_v3:RX200ReacherEnv',
+    max_episode_steps=1000,
+)
 # ---------------------------- Real Environments  ----------------------------
 
 # RX200 Reacher ROS_RL Default Environment
