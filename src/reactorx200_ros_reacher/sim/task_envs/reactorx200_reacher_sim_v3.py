@@ -541,25 +541,24 @@ class RX200ReacherEnv(reactorx200_robot_sim_v3.RX200RobotEnv):
         action = np.clip(action, self.min_joint_values, self.max_joint_values)
         # rospy.logwarn(f"Action + current joint_values after clip --->: {action}")
 
-        # check if the ee pose is within the goal space - using FK
-        self.within_goal_space= self.check_action_within_goal_space(action)
+        if self.check_goal_reachable_joint_pos(action):
 
-        if self.within_goal_space:
-
-            if self.check_goal_reachable_joint_pos(action):
-
+            # check if the action is within the goal space
+            if self.check_action_within_goal_space(action):
                 # execute the trajectory - ros_controllers
                 self.move_joints(q_positions=action, time_from_start=self.environment_loop_time)
                 self.movement_result = True
+                self.within_goal_space = True
 
             else:
-                rospy.logwarn(f"The action: {action} is not reachable!")
                 rospy.logdebug(f"Set action failed for --->: {action}")
                 self.movement_result = False
 
         else:
+            rospy.logwarn(f"The action: {action} is not reachable!")
             rospy.logdebug(f"Set action failed for --->: {action}")
             self.movement_result = False
+            self.within_goal_space = False
 
     def sample_observation(self):
         """

@@ -263,7 +263,7 @@ class RX200RobotEnv(GazeboBaseEnv.GazeboBaseEnv):
 
         # rosservice name for FK
         self.fk_service_name = namespace + "/compute_fk"
-        self.ee_link = namespace + "/ee_gripper_link"
+        self.ee_link = namespace + "/ee_arm_link"
         self.ref_frame = namespace + "/base_link"  # not necessary. by default, it uses the base_link
 
         """
@@ -306,13 +306,19 @@ class RX200RobotEnv(GazeboBaseEnv.GazeboBaseEnv):
         """
         # Create a RobotState message to hold the input joint values
         robot_state = RobotState()
-        robot_state.joint_state.name = self.joint_state.name
-        robot_state.joint_state.position = list(self.joint_state.position)  # Copy the current joint positions
+        robot_state.joint_state = self.joint_state
+
+        # get the current joint positions
+        current_joint_pos = list(self.joint_state.position)  # Copy the current joint positions
 
         # Set the positions of the joints in your action space
         for joint_name, joint_position in zip(self.joint_names, action):
             index = robot_state.joint_state.name.index(joint_name)
-            robot_state.joint_state.position[index] = joint_position
+            current_joint_pos[index] = joint_position
+
+        # convert the current_joint_pos to a float64 array
+        robot_state.joint_state.position = current_joint_pos
+        # print("Data type:", type(robot_state.joint_state.effort))
 
         # Create a FK service request
         fk_request = GetPositionFKRequest()
@@ -329,6 +335,8 @@ class RX200RobotEnv(GazeboBaseEnv.GazeboBaseEnv):
         try:
             fk_service = rospy.ServiceProxy(self.fk_service_name, GetPositionFK)
             fk_response = fk_service(fk_request)
+
+            print("fk_response: ", fk_response)
 
             if len(fk_response.pose_stamped) >= 1:
 
