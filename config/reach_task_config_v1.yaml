@@ -145,4 +145,5 @@ rx200: #namespace
     reached_goal_reward: 20
     joint_limits_reward: -2.0
     none_exe_reward: -5.0
+    not_within_goal_space_reward: -2.0
 
