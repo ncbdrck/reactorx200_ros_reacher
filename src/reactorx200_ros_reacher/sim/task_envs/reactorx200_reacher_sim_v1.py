@@ -560,9 +560,9 @@ class RX200ReacherEnv(reactorx200_robot_sim_v2.RX200RobotEnv):
             # clip the action
             action = np.clip(action, self.min_ee_values, self.max_ee_values)
 
-            # check if we can reach the goal
-            if self.check_goal(action):
-                # execute the trajectory - ros_controllers
+            # check if we can reach the goal and within the goal space
+            if self.check_goal(action) and self.goal_space.contains(action):
+                # execute the trajectory - EE
                 self.movement_result = self.set_trajectory_ee(action)
 
             else:
