@@ -44,11 +44,12 @@ class RX200ReacherEnv(reactorx200_robot_real.RX200RobotEnv):
         * ee_action_type: Whether to use the end-effector action space or the joint action space.
         * delta_action: Whether to use the delta actions or the absolute actions.
         * delta_coeff: Coefficient to be used for the delta actions.
+        * default_port: Whether to use the default port for the roscore or not.
     """
 
     def __init__(self, new_roscore: bool = False, roscore_port: str = None, seed: int = None,
                  close_env_prompt: bool = True, reward_type: str = "Dense", ee_action_type: bool = False,
-                 delta_action: bool = False, delta_coeff: float = 0.05):
+                 delta_action: bool = False, delta_coeff: float = 0.05, default_port=True):
 
         """
         variables to keep track of ros port
@@ -59,8 +60,12 @@ class RX200ReacherEnv(reactorx200_robot_real.RX200RobotEnv):
         Initialise the env
         """
 
+        # launch a new roscore with default port
+        if default_port:
+            ros_port = self._launch_roscore(default_port=default_port)
+
         # Launch new roscore
-        if new_roscore:
+        elif new_roscore:
             ros_port = self._launch_roscore(port=roscore_port)
 
         # ros_port of the already running roscore
@@ -567,7 +572,8 @@ class RX200ReacherEnv(reactorx200_robot_real.RX200RobotEnv):
     # ------------------------------------------------------
     #   Task Methods for launching roscore
 
-    def _launch_roscore(self, port=None, set_new_master_vars=False):
+    @staticmethod
+    def _launch_roscore(port=None, set_new_master_vars=False, default_port=False):
         """
         Launches a new roscore with the specified port. Only updates the ros_port.
 
@@ -575,7 +581,11 @@ class RX200ReacherEnv(reactorx200_robot_real.RX200RobotEnv):
             ros_port: port of launched roscore
         """
 
-        ros_port, _ = ros_common.launch_roscore(port=int(port), set_new_master_vars=set_new_master_vars)
+        if port is None:
+            port = int(port)
+
+        ros_port = ros_common.launch_roscore(port=port, set_new_master_vars=set_new_master_vars,
+                                             default_port=default_port)
 
         # change to new rosmaster
         ros_common.change_ros_master(ros_port)
