@@ -22,9 +22,9 @@ from multiros.utils import ros_common
 from multiros.utils import ros_controllers
 from multiros.utils import ros_markers
 
-import PyKDL
 from urdf_parser_py.urdf import URDF
-from tf.transformations import euler_from_quaternion, quaternion_matrix
+from pykdl_utils.kdl_kinematics import KDLKinematics
+from tf.transformations import euler_from_matrix
 
 from moveit_msgs.srv import GetPositionFK, GetPositionFKRequest
 from moveit_msgs.msg import RobotState
@@ -220,7 +220,6 @@ class RX200RobotEnv(GazeboBaseEnv.GazeboBaseEnv):
         self.joint_state_sub = rospy.Subscriber(self.joint_state_topic, JointState, self.joint_state_callback)
         self.joint_state = JointState()
 
-
         # ---------- Moveit
         ros_common.ros_launch_launcher(pkg_name="interbotix_xsarm_moveit_interface",
                                        launch_file_name="xsarm_moveit_interface.launch",
@@ -261,10 +260,16 @@ class RX200RobotEnv(GazeboBaseEnv.GazeboBaseEnv):
                                                                JointTrajectory,
                                                                queue_size=10)
 
-        # rosservice name for FK
+        # rosservice name for FK service - moveit (we are not using this
         self.fk_service_name = namespace + "/compute_fk"
-        self.ee_link = namespace + "/ee_arm_link"
-        self.ref_frame = namespace + "/base_link"  # not necessary. by default, it uses the base_link
+
+        # parameters for calculating FK
+        self.ee_link = "rx200/ee_gripper_link"
+        self.ref_frame = "rx200/base_link"
+
+        # Fk with pykdl_utils
+        self.pykdl_robot = URDF.from_parameter_server(key='rx200/robot_description')
+        self.kdl_kin = KDLKinematics(urdf=self.pykdl_robot, base_link=self.ref_frame, end_link=self.ee_link)
 
         """
         Finished __init__ method
@@ -280,6 +285,8 @@ class RX200RobotEnv(GazeboBaseEnv.GazeboBaseEnv):
 
     """
     Define the custom methods for the environment
+        * fk_pykdl: Function to calculate the forward kinematics of the robot arm. We are using pykdl_utils.
+        * calculate_fk: Function to calculate the forward kinematics of the robot arm. We are using a service from moveit.
         * move_joints: Set a joint position target only for the arm joints using low-level ros controllers.
         * joint_state_callback: Get the joint state of the robot
         * set_trajectory_joints: Set a joint position target only for the arm joints.
@@ -290,6 +297,30 @@ class RX200RobotEnv(GazeboBaseEnv.GazeboBaseEnv):
         * check_goal: Check if the goal is reachable
         * check_goal_reachable_joint_pos: Check if the goal is reachable with joint positions
     """
+    def fk_pykdl(self, action):
+        """
+        Function to calculate the forward kinematics of the robot arm. We are using pykdl_utils.
+
+        Args:
+            action: joint positions of the robot arm (in radians)
+
+        Returns:
+            ee_position: end-effector position as a numpy array
+        """
+        # Calculate forward kinematics
+        pose = self.kdl_kin.forward(action)
+
+        # Extract position
+        ee_position = np.array([pose[0, 3], pose[1, 3], pose[2, 3]], dtype=np.float32)
+        # print("ee pos:", ee_position)  # for debugging
+        # print("ee pos dtype:", type(ee_position))  # for debugging
+
+        # Extract rotation matrix and convert to euler angles
+        # ee_orientation = euler_from_matrix(pose[:3, :3], 'sxyz')
+
+        return ee_position
+
+    # We are not using this. The above function is better
     def calculate_fk(self, action, ee_link, ref_frame=None):
         """
         Function to calculate the forward kinematics of the robot arm. We are using a service from moveit.
@@ -336,7 +367,7 @@ class RX200RobotEnv(GazeboBaseEnv.GazeboBaseEnv):
             fk_service = rospy.ServiceProxy(self.fk_service_name, GetPositionFK)
             fk_response = fk_service(fk_request)
 
-            print("fk_response: ", fk_response)
+            # print("fk_response: ", fk_response)
 
             if len(fk_response.pose_stamped) >= 1:
 
@@ -375,7 +406,6 @@ class RX200RobotEnv(GazeboBaseEnv.GazeboBaseEnv):
         # get the current joint efforts - not using this
         self.current_joint_efforts = list(joint_state.effort)
 
-
     def move_joints(self, q_positions: np.ndarray, time_from_start: float = 0.5) -> bool:
         """
         Set a joint position target only for the arm joints using low-level ros controllers.
@@ -401,7 +431,6 @@ class RX200RobotEnv(GazeboBaseEnv.GazeboBaseEnv):
         self.joint_trajectory_controller_pub.publish(trajectory)
 
         return True
-
 
     def set_trajectory_joints(self, q_positions: np.ndarray) -> bool:
         """

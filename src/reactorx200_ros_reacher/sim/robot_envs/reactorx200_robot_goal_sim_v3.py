@@ -21,6 +21,10 @@ from multiros.utils import ros_common
 from multiros.utils import ros_controllers
 from multiros.utils import ros_markers
 
+from urdf_parser_py.urdf import URDF
+from pykdl_utils.kdl_kinematics import KDLKinematics
+from tf.transformations import euler_from_matrix
+
 """
 Although it is best to register only the task environment, one can also register the robot environment. 
 This is not necessary, but we can see if this section 
@@ -32,8 +36,8 @@ but you need to
     3. run the env - env = gym.make('RX200RobotGoalEnv-v0')
 """
 register(
-    id='RX200RobotGoalEnv-v2',
-    entry_point='reactorx200_ros_reacher.sim.robot_envs.reactorx200_robot_goal_sim_v2:RX200RobotGoalEnv',
+    id='RX200RobotGoalEnv-v3',
+    entry_point='reactorx200_ros_reacher.sim.robot_envs.reactorx200_robot_goal_sim_v3:RX200RobotGoalEnv',
     max_episode_steps=1000,
 )
 
@@ -42,10 +46,8 @@ class RX200RobotGoalEnv(GazeboGoalEnv.GazeboGoalEnv):
     """
     Superclass for all RX200 Robot Goal environments.
 
-    This is the v2 of the robot environment. Following are the changes from the v1:
-        * Use moveit check if the goal is reachable - joint positions
-        * Get joint states for velocity and position
-        * use ros_controllers to control the robot - more low-level control
+    This is the v3 of the robot environment. Following are the changes from the v2:
+        * FK loop to get the end-effector pose
     """
 
     def __init__(self, ros_port: str = None, gazebo_port: str = None, gazebo_pid=None, seed: int = None,
@@ -254,6 +256,14 @@ class RX200RobotGoalEnv(GazeboGoalEnv.GazeboGoalEnv):
                                                                JointTrajectory,
                                                                queue_size=10)
 
+        # parameters for calculating FK
+        self.ee_link = "rx200/ee_gripper_link"
+        self.ref_frame = "rx200/base_link"
+
+        # Fk with pykdl_utils
+        self.pykdl_robot = URDF.from_parameter_server(key='rx200/robot_description')
+        self.kdl_kin = KDLKinematics(urdf=self.pykdl_robot, base_link=self.ref_frame, end_link=self.ee_link)
+
         """
         Finished __init__ method
         """
@@ -268,6 +278,7 @@ class RX200RobotGoalEnv(GazeboGoalEnv.GazeboGoalEnv):
 
     """
     Define the custom methods for the environment
+        * fk_pykdl: Function to calculate the forward kinematics of the robot arm. We are using pykdl_utils. 
         * move_joints: Set a joint position target only for the arm joints using low-level ros controllers.
         * joint_state_callback: Get the joint state of the robot
         * set_trajectory_joints: Set a joint position target only for the arm joints.
@@ -278,6 +289,26 @@ class RX200RobotGoalEnv(GazeboGoalEnv.GazeboGoalEnv):
         * check_goal: Check if the goal is reachable
         * check_goal_reachable_joint_pos: Check if the goal is reachable with joint positions
     """
+    def fk_pykdl(self, action):
+        """
+        Function to calculate the forward kinematics of the robot arm. We are using pykdl_utils.
+
+        Args:
+            action: joint positions of the robot arm (in radians)
+
+        Returns:
+            ee_position: end-effector position as a numpy array
+        """
+        # Calculate forward kinematics
+        pose = self.kdl_kin.forward(action)
+
+        # Extract position
+        ee_position = np.array([pose[0, 3], pose[1, 3], pose[2, 3]], dtype=np.float32)  # we need to convert to float32
+
+        # Extract rotation matrix and convert to euler angles
+        # ee_orientation = euler_from_matrix(pose[:3, :3], 'sxyz')
+
+        return ee_position
 
     def joint_state_callback(self, joint_state):
         """
