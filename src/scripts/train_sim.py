@@ -41,11 +41,9 @@ if __name__ == '__main__':
     #                         delta_action=True, real_time=True, environment_loop_rate=10.0, action_cycle_time=0.8
     #                         use_smoothing=False)
 
-    # env = gym.make('RX200ReacherEnvSim-v2', gazebo_gui=False, delta_action=True, real_time=True, reward_type="dense",
-    #                environment_loop_rate=10.0, action_cycle_time=0.8, seed=10, use_smoothing=False)
-
-    env = gym.make('RX200ReacherEnvSim-v3', gazebo_gui=True, delta_action=True, real_time=True, reward_type="dense",
+    env = gym.make('RX200ReacherEnvSim-v2', gazebo_gui=False, delta_action=True, real_time=True, reward_type="dense",
                    environment_loop_rate=10.0, action_cycle_time=0.8, seed=10, use_smoothing=False)
+
 
     # --- goal-conditioned environments
     # env = multiros_gym.make('RX200ReacherGoalEnvSim-v1', gazebo_gui=False, ee_action_type=False,
