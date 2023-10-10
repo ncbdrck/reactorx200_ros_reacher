@@ -69,6 +69,34 @@ catkin build
 source devel/setup.bash
 ```
 
+### 6. Additional ROS Packages required for the Reach Task 
+
+In the reach task, to do forward kinematics, we use `pykdl_utils` package. To install it, run the following commands:
+```shell
+# download the package - modified version of the original package to support ROS Noetic
+cd ~/catkin_ws/src
+git clone https://github.com/ncbdrck/hrl-kdl.git
+
+# install the pykd_utils
+cd pykdl_utils
+python3 setup.py build
+sudo python3 setup.py install
+
+# Install hrl_geom
+cd ~/catkin_ws/src/hrl-kdl/hrl_geom/
+python3 setup.py build
+sudo python3 setup.py install
+
+# Install urdf_parser and urdfdom-py
+sudo apt-get install ros-noetic-urdf-parser-plugin
+sudo apt-get install ros-noetic-urdfdom-py
+
+# build the ROS packages and source the environment:
+cd ~/catkin_ws/
+rosdep install --from-paths src --ignore-src -r -y
+catkin build
+source devel/setup.bash
+```
 Please note that the instructions assume you are using Ubuntu 20.04 and ROS Noetic. If you are using a different operating system or ROS version, make sure to adapt the commands accordingly.
 
 ## Installation
@@ -234,11 +262,11 @@ from multiros.wrappers.time_limit_wrapper import TimeLimitWrapper
 if __name__ == '__main__':
     
     env = gym.make('RX200ReacherEnvSim-v2', gazebo_gui=False, delta_action=True, real_time=True, reward_type="dense",
-                   environment_loop_rate=50.0, action_cycle_time=0.2, seed=0)
+                   environment_loop_rate=10.0, action_cycle_time=0.8, seed=0, use_smoothing=True)
     
     # # or 
     # env = multiros_gym.make('RX200ReacherEnvSim-v2', gazebo_gui=False, delta_action=True, real_time=True, reward_type="dense",
-    #                environment_loop_rate=50.0, action_cycle_time=0.2, seed=0)
+    #                environment_loop_rate=10.0, action_cycle_time=0.8, seed=0, use_smoothing=True)
     
     env = NormalizeActionWrapper(env)
     env = NormalizeObservationWrapper(env)
@@ -285,11 +313,11 @@ from multiros.wrappers.time_limit_wrapper import TimeLimitWrapper
 if __name__ == '__main__':
     
     env = gym.make('RX200ReacherEnvSim-v2', gazebo_gui=False, delta_action=True, real_time=True, reward_type="dense",
-                   environment_loop_rate=50.0, action_cycle_time=0.2, seed=0)
+                   environment_loop_rate=10.0, action_cycle_time=0.8, seed=0, use_smoothing=True)
     
     # # or 
     # env = multiros_gym.make('RX200ReacherEnvSim-v2', gazebo_gui=False, delta_action=True, real_time=True, reward_type="dense",
-    #                environment_loop_rate=50.0, action_cycle_time=0.2, seed=0)
+    #                environment_loop_rate=10.0, action_cycle_time=0.8, seed=0, use_smoothing=True)
     
     env = NormalizeActionWrapper(env)
     env = NormalizeObservationWrapper(env)
