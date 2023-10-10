@@ -296,7 +296,7 @@ class RX200ReacherEnv(reactorx200_robot_sim_v2.RX200RobotEnv):
         rospy.loginfo("Initialising the init params!")
 
         # Initial robot pose - Home
-        self.init_pos = np.array([0.0, 0.0, 0.0, 0.0, 0.0])
+        self.init_pos = np.array([0.0, 0.0, 0.0, 0.0, 0.0],  dtype=np.float32)
 
         # make the current action None to stop execution for real time envs and also stop the env loop
         if self.real_time:
@@ -359,6 +359,7 @@ class RX200ReacherEnv(reactorx200_robot_sim_v2.RX200RobotEnv):
             rospy.loginfo("Done resetting the env loop!")
 
             self.init_done = True
+            self.current_action = self.init_pos.copy()
 
         rospy.loginfo("Initialising init params done--->")
 
