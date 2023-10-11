@@ -207,6 +207,7 @@ The env parameters are explained in the following table:
 |-----------------------|-------------------------------------------------------|----|----|
 | ee_action_type (bool) | Whether to use end-effector actions or joint actions. | ✔️ | ❌  |
 
+### 2. Observation Space and Action Space
 
 **Observation Space:**
 
@@ -227,7 +228,7 @@ The env parameters are explained in the following table:
 | EE Position     | 3D end-effector position in the world frame | ✔️ | ❌  | 3        |
 | Joints position | joint posiions of the robot                | ✔️ | ✔️ | 5        |
 
-### 2. Training in the real world or simulation
+### 3. Training in the real world or simulation
  
 - The first step is to check the `train_sim.py` or `train_real.py` files in the scripts folder
 and modify the parameters accordingly.
@@ -279,7 +280,7 @@ if __name__ == '__main__':
     env.close()
 ```
 
-### 3. Evaluating the trained model
+### 4. Evaluating the trained model
 
 - The first step is to check the `validate_sim.py` or `evalidate_real.py` files in the scripts folder
 - The RL model parameters are in the `config` folder in the project repo.
