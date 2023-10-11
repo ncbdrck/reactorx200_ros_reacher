@@ -1,0 +1,8 @@
+# NumPy for numerical computations
+numpy
+
+# for graphical representation
+matplotlib
+
+# also
+wandb
