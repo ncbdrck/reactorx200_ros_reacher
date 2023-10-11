@@ -135,7 +135,7 @@ This repo contains both simulated and real-world environments. Out of these envi
 - `v0` is now deprecated
 - `v1` - Supports both sequential and asynchronous learning and uses **Moveit** to move the robot
 - `v1` - Also supports controlling the robots with joint positions (5 elements) or by giving the end-effector 3D position (3 elements) as actions. (Must be set when initialising the environment. **Default** is Joint positions)
-- `v2` - Supports sequential and asynchronous learning and uses **ROS Controllers** (Joint positions) to move the robot. Doesn't support end-effector 3D position.
+- `v2` - Supports sequential and asynchronous learning and uses **ROS Controllers** (Joint positions) to move the robot. **Doesn't** support end-effector 3D position.
 
 ### 1. Available Environments
 
