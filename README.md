@@ -78,7 +78,7 @@ cd ~/catkin_ws/src
 git clone https://github.com/ncbdrck/hrl-kdl.git
 
 # install the pykd_utils
-cd pykdl_utils
+cd ~/catkin_ws/src/hrl-kdl/pykdl_utils
 python3 setup.py build
 sudo python3 setup.py install
 
@@ -266,7 +266,8 @@ if __name__ == '__main__':
     
     # # or 
     # env = multiros_gym.make('RX200ReacherEnvSim-v2', gazebo_gui=False, delta_action=True, real_time=True, reward_type="dense",
-    #                environment_loop_rate=10.0, action_cycle_time=0.8, seed=0, use_smoothing=True)
+    #                environment_loop_rate=10.0, action_cycle_time=0.8, seed=0, use_smoothing=True
+    #                )
     
     env = NormalizeActionWrapper(env)
     env = NormalizeObservationWrapper(env)
