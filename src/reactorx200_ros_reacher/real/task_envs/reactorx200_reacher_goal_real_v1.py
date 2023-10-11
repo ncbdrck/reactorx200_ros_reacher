@@ -404,7 +404,12 @@ class RX200ReacherGoalEnv(reactorx200_robot_goal_real_v1.RX200RobotGoalEnv):
         # We can start the environment loop now
         if self.real_time:
             rospy.loginfo("Start resetting the env loop!")
-            self.prev_action = self.init_pos.copy()
+
+            # set the prev action
+            if self.ee_action_type:
+                self.prev_action = self.ee_pos.copy()
+            else:
+                self.prev_action = self.init_pos.copy()
 
             # init the real time variables
             self.obs_r = None
