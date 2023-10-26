@@ -46,6 +46,20 @@ register(
     max_episode_steps=1000,
 )
 
+# RX200 Reacher Multiros Default Environment v0 - discrete action space
+register(
+    id='RX200ReacherDiscreteEnvSim-v0',
+    entry_point='reactorx200_ros_reacher.sim.task_envs.reactorx200_reacher_discrete_sim_v0:RX200ReacherEnv',
+    max_episode_steps=1000,
+)
+
+# RX200 Reacher Multiros Goal Environment v0 - discrete action space
+register(
+    id='RX200ReacherDiscreteGoalEnvSim-v0',
+    entry_point='reactorx200_ros_reacher.sim.task_envs.reactorx200_reacher_discrete_goal_sim_v0:RX200ReacherGoalEnv',
+    max_episode_steps=1000,
+)
+
 # ---------------------------- Real Environments  ----------------------------
 
 # RX200 Reacher ROS_RL Default Environment
