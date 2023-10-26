@@ -273,6 +273,8 @@ class RX200ReacherEnv(reactorx200_robot_real_v1.RX200RobotEnv):
             else:
                 self.action_vector = np.zeros(5, dtype=np.float32)
 
+        self.prev_action = None  # for observation
+
         # set the initial parameters for real time envs
         if environment_loop_rate is not None and self.real_time:
             self.obs_r = None
@@ -281,7 +283,6 @@ class RX200ReacherEnv(reactorx200_robot_real_v1.RX200RobotEnv):
             self.info_r = {}
             self.current_action = None
             self.init_done = False  # we don't need to execute the loop until we reset the env
-            self.prev_action = None
 
             # Debug
             self.loop_counter = 0
@@ -362,15 +363,15 @@ class RX200ReacherEnv(reactorx200_robot_real_v1.RX200RobotEnv):
         self.action_not_in_limits = False
         self.within_goal_space = True
 
+        # set the prev action
+        if self.ee_action_type:
+            self.prev_action = self.ee_pos.copy()
+        else:
+            self.prev_action = self.init_pos.copy()
+
         # We can start the environment loop now
         if self.real_time:
             rospy.loginfo("Start resetting the env loop!")
-
-            # set the prev action
-            if self.ee_action_type:
-                self.prev_action = self.ee_pos.copy()
-            else:
-                self.prev_action = self.init_pos.copy()
 
             # init the real time variables
             self.obs_r = None
@@ -406,6 +407,7 @@ class RX200ReacherEnv(reactorx200_robot_real_v1.RX200RobotEnv):
 
         # normal env- Sequential
         else:
+            self.prev_action = action.copy()
             self.execute_action(action)
 
     def _get_observation(self):
