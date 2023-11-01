@@ -353,7 +353,7 @@ adds it to the `~/.bashrc` file. As a result, each time you open a new terminal,
 
 1. modify the line in the `~/.bashrc` file that sources the RX200 ROS workspace. This will ensure that your `catkin_ws` directory is sourced instead when opening a new terminal.
 
-2. Source the catkin_ws directory explicitly before running the scripts in this repository. This will override the sourcing of the RX200 ROS workspace and ensure that the correct workspace is used.
+2. Source the catkin_ws directory explicitly before running the scripts in this repository. This will override the sourcing of the Rx200 ROS workspace and ensure that the correct workspace is used.
 
 By taking one of these steps, you can avoid the error and ensure that the correct workspace is sourced when running the scripts in this repository.
 
