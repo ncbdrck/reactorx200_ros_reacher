@@ -348,10 +348,14 @@ if __name__ == '__main__':
 
 ## Issues
 
-If you have installed the Rx200 robot package from the official documentation, you may face an error when running the scripts in this repository. This occurs because the official installation creates a new ROS workspace in your home directory and 
-adds it to the `~/.bashrc` file. As a result, each time you open a new terminal, the Rx200 ROS workspace in your home directory is sourced instead of your `catkin_ws` directory. To resolve this, you have two options:
+If you have installed the Rx200 robot package from the official documentation, you may face an error when running the scripts in this repository. 
 
-1. modify the line in the `~/.bashrc` file that sources the RX200 ROS workspace. This will ensure that your `catkin_ws` directory is sourced instead when opening a new terminal.
+This occurs because the official installation creates a new ROS workspace (`interbotix_ws`) in your home directory and 
+adds it to the `~/.bashrc` file. As a result, each time you open a new terminal, the Rx200 ROS workspace in your home directory is sourced instead of your `catkin_ws` directory. 
+
+To resolve this, you have two options:
+
+1. modify the line in the `~/.bashrc` file that sources the Rx200 ROS workspace. This will ensure that your `catkin_ws` directory is sourced instead when opening a new terminal.
 
 2. Source the catkin_ws directory explicitly before running the scripts in this repository. This will override the sourcing of the Rx200 ROS workspace and ensure that the correct workspace is used.
 
