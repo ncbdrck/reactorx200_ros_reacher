@@ -292,20 +292,21 @@ class RX200RobotEnv(GazeboBaseEnv.GazeboBaseEnv):
         Function to get the joint state of the robot.
         """
 
-        self.joint_state = joint_state
+        if joint_state is not None:
+            self.joint_state = joint_state
 
-        # joint names - not using this
-        self.joint_state_names = list(joint_state.name)
+            # joint names - not using this
+            self.joint_state_names = list(joint_state.name)
 
-        # get the current joint positions - using this
-        joint_pos_all = list(joint_state.position)
-        self.joint_pos_all = joint_pos_all
+            # get the current joint positions - using this
+            joint_pos_all = list(joint_state.position)
+            self.joint_pos_all = joint_pos_all
 
-        # get the current joint velocities - we are using this
-        self.current_joint_velocities = list(joint_state.velocity)
+            # get the current joint velocities - we are using this
+            self.current_joint_velocities = list(joint_state.velocity)
 
-        # get the current joint efforts - not using this
-        self.current_joint_efforts = list(joint_state.effort)
+            # get the current joint efforts - not using this
+            self.current_joint_efforts = list(joint_state.effort)
 
 
     def move_joints(self, q_positions: np.ndarray, time_from_start: float = 0.5) -> bool:

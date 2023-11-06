@@ -269,7 +269,8 @@ class RX200RobotGoalEnv(GazeboGoalEnv.GazeboGoalEnv):
         Function to get the joint state of the robot.
         """
 
-        self.joint_state = joint_state
+        if joint_state is not None:
+            self.joint_state = joint_state
 
     def set_trajectory_joints(self, q_positions: np.ndarray) -> bool:
         """
