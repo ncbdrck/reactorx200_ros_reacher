@@ -69,34 +69,6 @@ catkin build
 source devel/setup.bash
 ```
 
-### 6. Additional ROS Packages required for the Reach Task 
-
-In the reach task, to do forward kinematics, we use `pykdl_utils` package. To install it, run the following commands:
-```shell
-# download the package - modified version of the original package to support ROS Noetic
-cd ~/catkin_ws/src
-git clone https://github.com/ncbdrck/hrl-kdl.git
-
-# install the pykd_utils
-cd ~/catkin_ws/src/hrl-kdl/pykdl_utils
-python3 setup.py build
-sudo python3 setup.py install
-
-# Install hrl_geom
-cd ~/catkin_ws/src/hrl-kdl/hrl_geom/
-python3 setup.py build
-sudo python3 setup.py install
-
-# Install urdf_parser and urdfdom-py
-sudo apt-get install ros-noetic-urdf-parser-plugin
-sudo apt-get install ros-noetic-urdfdom-py
-
-# build the ROS packages and source the environment:
-cd ~/catkin_ws/
-rosdep install --from-paths src --ignore-src -r -y
-catkin build
-source devel/setup.bash
-```
 Please note that the instructions assume you are using Ubuntu 20.04 and ROS Noetic. If you are using a different operating system or ROS version, make sure to adapt the commands accordingly.
 
 ## Installation
