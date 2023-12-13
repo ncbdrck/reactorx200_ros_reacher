@@ -6,9 +6,9 @@ import rospy
 # gym
 import gym
 
-# Multiros and ros_rl packages
-from ros_rl.core import ros_rl_gym
-from ros_rl.utils import ros_common as ros_rl_common
+# Multiros and realros packages
+from realros.core import realros_gym
+from realros.utils import ros_common as realros_common
 from multiros.core import multiros_gym
 from multiros.utils import ros_common as multiros_common
 
@@ -32,18 +32,18 @@ import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
     # Kill all processes related to previous runs
-    # ros_rl_common.kill_all_ros_processes()
+    # realros_common.kill_all_ros_processes()
     # multiros_common.kill_all_ros_and_gazebo()
 
     # --- normal environments
     env = multiros_gym.make('RX200ReacherEnvSim-v0', gazebo_gui=False, ee_action_type=False,
                             delta_action=False)  # sim
-    # env = ros_rl_gym.make('RX200ReacherEnvReal-v0', ee_action_type=False, delta_action=False)  # real
+    # env = realros_gym.make('RX200ReacherEnvReal-v0', ee_action_type=False, delta_action=False)  # real
 
     # --- goal-conditioned environments
     # env = multiros_gym.make('RX200ReacherGoalEnvSim-v0', gazebo_gui=False, ee_action_type=False,
     #                delta_action=False, reward_type="sparse")  # sim
-    # env = ros_rl_gym.make('RX200ReacherGoalEnvReal-v0', ee_action_type=False, delta_action=False,
+    # env = realros_gym.make('RX200ReacherGoalEnvReal-v0', ee_action_type=False, delta_action=False,
     #                       reward_type="sparse")  # real
 
     # initialize wandb

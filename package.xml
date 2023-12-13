@@ -2,7 +2,7 @@
 <package format="2">
   <name>reactorx200_ros_reacher</name>
   <version>0.0.1</version>
-  <description>Simple Reach Task for ROS_RL and MultiROS Packages</description>
+  <description>Simple Reach Task for RealROS and MultiROS Packages</description>
 
   <author email="j.kapukotuwa@research.ait.ie">Jayasekara Kapukotuwa</author>
   <maintainer email="j.kapukotuwa@research.ait.ie">Jayasekara Kapukotuwa</maintainer>
@@ -14,21 +14,21 @@
   <build_depend>geometry_msgs</build_depend>
   <build_depend>rospy</build_depend>
   <build_depend>multiros</build_depend>
-  <build_depend>ros_rl</build_depend>
+  <build_depend>realros</build_depend>
   <build_depend>sensor_msgs</build_depend>
   <build_depend>std_msgs</build_depend>
 
   <build_export_depend>rospy</build_export_depend>
   <build_export_depend>geometry_msgs</build_export_depend>
   <build_export_depend>multiros</build_export_depend>
-  <build_export_depend>ros_rl</build_export_depend>
+  <build_export_depend>realros</build_export_depend>
   <build_export_depend>sensor_msgs</build_export_depend>
   <build_export_depend>std_msgs</build_export_depend>
 
   <exec_depend>rospy</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>multiros</exec_depend>
-  <exec_depend>ros_rl</exec_depend>
+  <exec_depend>realros</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>std_msgs</exec_depend>
 

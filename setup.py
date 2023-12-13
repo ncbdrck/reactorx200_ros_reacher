@@ -7,9 +7,9 @@ setup_args = generate_distutils_setup(
     packages=['reactorx200_ros_reacher'],
     package_dir={'': 'src'},
 
-    description="Simple Reach Task for ROS_RL and MultiROS Packages",
+    description="Simple Reach Task for RealROS and MultiROS Packages",
     url="https://github.com/ncbdrck/reactorx200_ros_reacher",
-    keywords=['ROS', 'reinforcement learning', 'machine-learning', 'gym', 'robotics', 'openai', 'gazebo', 'ros_rl',
+    keywords=['ROS', 'reinforcement learning', 'machine-learning', 'gym', 'robotics', 'openai', 'gazebo', 'realros',
               'multiros', 'reactorx200'],
 
     author='Jayasekara Kapukotuwa',

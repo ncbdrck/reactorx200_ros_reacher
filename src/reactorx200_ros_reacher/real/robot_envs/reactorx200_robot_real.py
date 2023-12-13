@@ -9,13 +9,13 @@ import numpy as np
 from sensor_msgs.msg import JointState
 from geometry_msgs.msg import Pose
 
-from ros_rl.envs import RealBaseEnv
+from realros.envs import RealBaseEnv
 
 # core modules of the framework
-from ros_rl.utils.moveit_ros_rl import MoveitROS_RL
-from ros_rl.utils import ros_common
-from ros_rl.utils import ros_controllers
-from ros_rl.utils import ros_markers
+from realros.utils.moveit_realros import MoveitRealROS
+from realros.utils import ros_common
+from realros.utils import ros_controllers
+from realros.utils import ros_markers
 
 """
 Although it is best to register only the task environment, one can also register the robot environment. 
@@ -46,7 +46,7 @@ class RX200RobotEnv(RealBaseEnv.RealBaseEnv):
         Actuators Topic List:
             MoveIt! : MoveIt! action server is used to send the joint positions to the robot.
         """
-        rospy.loginfo("Start Init RX200RobotEnv ROS_RL")
+        rospy.loginfo("Start Init RX200RobotEnv RealROS")
 
         """
         Change the ros/gazebo master
@@ -98,10 +98,10 @@ class RX200RobotEnv(RealBaseEnv.RealBaseEnv):
         """
 
         # Moveit object
-        self.move_RX200_object = MoveitROS_RL(arm_name='interbotix_arm',
-                                              gripper_name='interbotix_gripper',
-                                              robot_description="rx200/robot_description",
-                                              ns="rx200")
+        self.move_RX200_object = MoveitRealROS(arm_name='interbotix_arm',
+                                               gripper_name='interbotix_gripper',
+                                               robot_description="rx200/robot_description",
+                                               ns="rx200")
 
         """
         Finished __init__ method

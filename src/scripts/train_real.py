@@ -8,9 +8,9 @@ import rospy
 import gym
 import numpy as np
 
-# We can use the following import statement if we want to use the ros_rl package
-from ros_rl.core import ros_rl_gym
-from ros_rl.utils import ros_common
+# We can use the following import statement if we want to use the realros package
+from realros.core import realros_gym
+from realros.utils import ros_common
 
 # Environments are registered inside the main __init__.py of the reactorx200_ros_reacher package
 import reactorx200_ros_reacher
@@ -21,9 +21,9 @@ from sb3_ros_support.td3 import TD3
 from sb3_ros_support.td3_goal import TD3_GOAL
 
 # wrappers
-from ros_rl.wrappers.normalize_action_wrapper import NormalizeActionWrapper
-from ros_rl.wrappers.normalize_obs_wrapper import NormalizeObservationWrapper
-from ros_rl.wrappers.time_limit_wrapper import TimeLimitWrapper
+from realros.wrappers.normalize_action_wrapper import NormalizeActionWrapper
+from realros.wrappers.normalize_obs_wrapper import NormalizeObservationWrapper
+from realros.wrappers.time_limit_wrapper import TimeLimitWrapper
 
 if __name__ == '__main__':
     # Kill all processes related to previous runs
@@ -33,7 +33,7 @@ if __name__ == '__main__':
     # ros_common.clean_ros_logs()
 
     # --- normal environments
-    # env = ros_rl_gym.make('RX200ReacherEnvReal-v1', ee_action_type=False, delta_action=True, real_time=True,
+    # env = realros_gym.make('RX200ReacherEnvReal-v1', ee_action_type=False, delta_action=True, real_time=True,
     #                       reward_type="dense", environment_loop_rate=10.0, action_cycle_time=0.8, seed=10,
     #                       use_smoothing=False)
 
@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
 
     # --- goal-conditioned environments
-    # env = ros_rl_gym.make('RX200ReacherGoalEnvReal-v1', ee_action_type=False, delta_action=False,
+    # env = realros_gym.make('RX200ReacherGoalEnvReal-v1', ee_action_type=False, delta_action=False,
     #                       real_time=True, reward_type="sparse", environment_loop_rate=10.0, action_cycle_time=0.8,
     #                       seed=10, use_smoothing=False)
 

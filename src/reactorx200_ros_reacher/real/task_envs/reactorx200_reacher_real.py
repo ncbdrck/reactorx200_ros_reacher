@@ -11,10 +11,8 @@ import scipy.spatial
 from reactorx200_ros_reacher.real.robot_envs import reactorx200_robot_real
 
 # core modules of the framework
-from ros_rl.utils import ros_common
-# from ros_rl.utils.moveit_ros_rl import MoveitROS_RL
-# from ros_rl.utils import ros_controllers
-from ros_rl.utils import ros_markers
+from realros.utils import ros_common
+from realros.utils import ros_markers
 
 # Register your environment using the OpenAI register method to utilize gym.make("TaskEnv-v0").
 register(

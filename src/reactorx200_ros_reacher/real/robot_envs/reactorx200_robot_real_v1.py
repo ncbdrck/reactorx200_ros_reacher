@@ -10,13 +10,13 @@ from geometry_msgs.msg import Pose
 from std_msgs.msg import Float64
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
-from ros_rl.envs import RealBaseEnv
+from realros.envs import RealBaseEnv
 
 # core modules of the framework
-from ros_rl.utils.moveit_ros_rl import MoveitROS_RL
-from ros_rl.utils import ros_common
-from ros_rl.utils import ros_controllers
-from ros_rl.utils import ros_markers
+from realros.utils.moveit_realros import MoveitRealROS
+from realros.utils import ros_common
+from realros.utils import ros_controllers
+from realros.utils import ros_markers
 
 from urdf_parser_py.urdf import URDF
 from pykdl_utils.kdl_kinematics import KDLKinematics
@@ -61,7 +61,7 @@ class RX200RobotEnv(RealBaseEnv.RealBaseEnv):
             MoveIt!: Send the joint positions to the robot.
             ROS Controllers: ROS Controllers are used to send the joint positions to the robot.
         """
-        rospy.loginfo("Start Init RX200RobotEnv ROS_RL")
+        rospy.loginfo("Start Init RX200RobotEnv RealROS")
 
         """
         Change the ros/gazebo master
@@ -126,10 +126,10 @@ class RX200RobotEnv(RealBaseEnv.RealBaseEnv):
         self.joint_state = JointState()
 
         # Moveit object
-        self.move_RX200_object = MoveitROS_RL(arm_name='interbotix_arm',
-                                              gripper_name='interbotix_gripper',
-                                              robot_description="rx200/robot_description",
-                                              ns="rx200")
+        self.move_RX200_object = MoveitRealROS(arm_name='interbotix_arm',
+                                               gripper_name='interbotix_gripper',
+                                               robot_description="rx200/robot_description",
+                                               ns="rx200")
 
         # For ROS Controllers
         self.joint_names = ["waist",
@@ -173,6 +173,7 @@ class RX200RobotEnv(RealBaseEnv.RealBaseEnv):
         * check_goal: Check if the goal is reachable
         * check_goal_reachable_joint_pos: Check if the goal is reachable with joint positions
     """
+
     def fk_pykdl(self, action):
         """
         Function to calculate the forward kinematics of the robot arm. We are using pykdl_utils.
