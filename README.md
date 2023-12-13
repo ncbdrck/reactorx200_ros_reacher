@@ -1,11 +1,11 @@
-# Reach Task for ROS_RL and MultiROS
+# Reach Task for RealROS and MultiROS
 
-This repository contains experiments conducted to showcase the capabilities of the [ROS_RL](https://github.com/ncbdrck/ros_rl) and [MultiROS](https://github.com/ncbdrck/multiros) frameworks. 
+This repository contains experiments conducted to showcase the capabilities of the [RealROS](https://github.com/ncbdrck/realros) and [MultiROS](https://github.com/ncbdrck/multiros) frameworks. 
 
 Here we show how to train a simple reach task using the [Rx200](https://www.trossenrobotics.com/reactorx-200-robot-arm.aspx) robot.
  
 This repo demonstrates the following features:
- 1. Training the task directly in the real world (No need for a simulation environment - only [ROS_RL](https://github.com/ncbdrck/ros_rl) is required). 
+ 1. Training the task directly in the real world (No need for a simulation environment - only [RealROS](https://github.com/ncbdrck/realros) is required). 
  2. Training in simulation (using [MultiROS](https://github.com/ncbdrck/multiros) package) and deploying the trained model in the real world.
  3. Real-time training with simulation and real-world data for obtaining better generalisation.
 
@@ -13,9 +13,9 @@ This repo demonstrates the following features:
 
 Before installing this package, make sure you have the following prerequisites:
 
-### 1. ROS_RL
+### 1. RealROS
 
-This ROS repo requires **ROS_RL** to train or evaluate the reach task in the real world. Please follow the instructions in the [ROS_RL repository](https://github.com/ncbdrck/ros_rl) to install ROS_RL.
+This ROS repo requires **RealROS** to train or evaluate the reach task in the real world. Please follow the instructions in the [RealROS repository](https://github.com/ncbdrck/realros) to install RealROS.
 
 ### 2. MultiROS
 
