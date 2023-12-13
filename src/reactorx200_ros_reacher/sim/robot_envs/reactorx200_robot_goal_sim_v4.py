@@ -25,6 +25,12 @@ from urdf_parser_py.urdf import URDF
 from pykdl_utils.kdl_kinematics import KDLKinematics
 from tf.transformations import euler_from_matrix
 
+import PyKDL as kdl
+import copy
+import tf
+from kdl_parser_py.urdf import treeFromParam
+from trac_ik_python import trac_ik
+
 """
 Although it is best to register only the task environment, one can also register the robot environment. 
 This is not necessary, but we can see if this section 
@@ -36,7 +42,7 @@ but you need to
     3. run the env - env = gym.make('RX200RobotGoalEnv-v0')
 """
 register(
-    id='RX200RobotGoalEnv-v3',
+    id='RX200RobotGoalEnv-v4',
     entry_point='reactorx200_ros_reacher.sim.robot_envs.reactorx200_robot_goal_sim_v3:RX200RobotGoalEnv',
     max_episode_steps=1000,
 )
@@ -315,16 +321,19 @@ class RX200RobotGoalEnv(GazeboGoalEnv.GazeboGoalEnv):
         Function to get the joint state of the robot.
         """
 
-        self.joint_state = joint_state
+        # not necessary but we are using it just in case
+        if joint_state is not None:
 
-        # get the current joint positions - using this
-        self.joint_pos_all  = list(joint_state.position)
+            self.joint_state = joint_state
 
-        # get the current joint velocities - we are using this
-        self.current_joint_velocities = list(joint_state.velocity)
+            # get the current joint positions - using this
+            self.joint_pos_all  = list(joint_state.position)
 
-        # get the current joint efforts - not using this
-        self.current_joint_efforts = list(joint_state.effort)
+            # get the current joint velocities - we are using this
+            self.current_joint_velocities = list(joint_state.velocity)
+
+            # get the current joint efforts - not using this
+            self.current_joint_efforts = list(joint_state.effort)
 
     def move_joints(self, q_positions: np.ndarray, time_from_start: float = 0.5) -> bool:
         """

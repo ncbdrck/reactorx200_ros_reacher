@@ -60,7 +60,7 @@ if __name__ == '__main__':
     #                use_smoothing=False)
 
     # discrete action space
-    env = gym.make('RX200ReacherDiscreteGoalEnvSim-v0', gazebo_gui=False, delta_coeff=0.05, real_time=True,
+    env = gym.make('RX200ReacherDiscreteGoalEnvSim-v0', gazebo_gui=True, delta_coeff=0.05, real_time=True,
                    environment_loop_rate=10.0, action_cycle_time=0.8, seed=10, use_smoothing=True,
                    reward_type="sparse")
 
