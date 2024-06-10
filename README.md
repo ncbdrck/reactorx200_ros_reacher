@@ -1,4 +1,4 @@
-# Reach Task for RealROS and MultiROS
+# Reach Task for RealROS and MultiROS - OpenAI Gym based
 
 This repository contains experiments conducted to showcase the capabilities of the [RealROS](https://github.com/ncbdrck/realros) and [MultiROS](https://github.com/ncbdrck/multiros) frameworks. 
 
@@ -17,9 +17,12 @@ Before installing this package, make sure you have the following prerequisites:
 
 This ROS repo requires **RealROS** to train or evaluate the reach task in the real world. Please follow the instructions in the [RealROS repository](https://github.com/ncbdrck/realros) to install RealROS.
 
+**Note:** Make sure to check out the `openai_gym` branch of the RealROS repository before making the ros workspace.
 ### 2. MultiROS
 
 To simulate the task in Gazebo, you must install the **MultiROS** package. Please follow the instructions in the [MultiROS repository](https://github.com/ncbdrck/multiros) to install MultiROS.
+
+**Note:** Make sure to check out the `openai_gym` branch of the RealROS repository before making the ros workspace.
 
 ### 3. Rx200 Robot Repository
 
@@ -60,6 +63,7 @@ git clone https://github.com/ncbdrck/sb3_ros_support.git
 
 # install the required Python packages by running
 cd ~/catkin_ws/src/sb3_ros_support/
+git checkout openai_gym
 pip3 install -r requirements.txt
 
 # build the ROS packages and source the environment:
